@@ -3,6 +3,12 @@ function [C] = xcor_dirty(data1, data2, pixsize, rmax)
 % make an imref2d
 x1 = [data1.x]; y1 = [data1.y];
 x2 = [data2.x]; y2 = [data2.y];
+
+if isempty(x1) || isempty(x2)
+    C = [];
+    return
+end
+
 maxx = max(max(x1), max(x2));
 minx = min(min(x1), min(x2));
 maxy = max(max(y1), max(y2));
