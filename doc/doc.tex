@@ -10,6 +10,15 @@
 \begin{document}
 \maketitle
 
+\section{Data files}
+I submit, preliminarily, that data files should contain the following information:
+\begin{itemize}
+\item \verb|data| -- cell array with a standard dataset for each channel
+\item \verb|units| -- units for \verb|x| and \verb|y| (e.g. pixels or nm)
+\item \verb|source| -- what software produced this
+\item \verb|date| -- date this was produced (by source)
+\item \verb|filenames|
+\end{itemize}
 
 \section{Drift Correction}
 Stage drift over the course of a localization-microscopy experiment can be
@@ -32,7 +41,23 @@ If there has been drift between the two time-intervals, the cross-correlation pe
 will no longer be at 0 displacement, but will correspond to the drift.
 
 \subsection{parameters to specify}
+parameters are passed in a struct, with (at least) the following fields. All
+distances should be specified in terms of the same units as are used for
+\verb|x| and \verb|y| in the dataset.
 
-
+\begin{itemize}
+\item \verb|psize_for_alignment| -- Pixel size to be used for image correlations
+\item \verb|npoints_for_alignment| -- How many time bins to use
+\item \verb|nframes_per_alignment| -- How many frames go in each time bin
+\item \verb|interp_method| -- METHOD option to pass to interp1 when interpolating between
+    the measured shifts
+\item \verb|rmax_shift| -- maximum allowable drift (in practice, this sets the
+    size of the cross-correlation that is used for the first fit)
+\item \verb|rmax| -- frame size to use for second fit (should be smaller than
+    \verb|rmax_shift|)
+\item \verb|update_reference| -- true or false. Add (shifted) data from each
+    time bin to the reference to be used for subsequent shifts
+\item \verb|include_diagnostics| -- Save more of the fitting data for diagnostics
+\end{itemize}
 
 \end{document}
