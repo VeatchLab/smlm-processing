@@ -1,0 +1,38 @@
+\documentclass{article}
+
+\usepackage{amsmath,amssymb}
+
+\usepackage{graphicx}
+
+\title{Documentation for STORManalysis}
+\author{Thomas Shaw}
+
+\begin{document}
+\maketitle
+
+
+\section{Drift Correction}
+Stage drift over the course of a localization-microscopy experiment can be
+substantial, and correcting is important to obtaining optimal measurement
+accuracy.
+
+\subsection{Algorithms}
+
+All of the algorithms available in this package rely on the assumption that
+emitters and/or larger structures are fixed in place, but are detected many
+times over the course of an experiment. Thus, a spatial cross-correlation of
+localizations from two different time intervals should have a peak centered
+at a displacement of 0. Normally, there will be a primary peak due to multiple
+localizations of the same emitter (with width given by the localization precision).
+Secondary peaks, also centered at 0, may also be present, due to larger structures
+such as whole cells. The width of these peaks will depend on the length-scales of
+the structures.
+
+If there has been drift between the two time-intervals, the cross-correlation peak
+will no longer be at 0 displacement, but will correspond to the drift.
+
+\subsection{parameters to specify}
+
+
+
+\end{document}
