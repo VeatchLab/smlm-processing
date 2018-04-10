@@ -1,5 +1,6 @@
-function [xshift, yshift, diag] = compute_shifts(data, timings, specs)
+function [shifteddata, diag] = compute_shifts(data, timings, specs)
 
+olddata = data;
 % Put the data in the right shape
 if size(data,2) ~= numel(data)
     data = reshape(data', 1, numel(data));
@@ -14,6 +15,8 @@ psize = specs.psize_for_alignment;
 rmax1 = specs.rmax_shift;
 rmax = specs.rmax;
 update = specs.update_reference_flag;
+interp_method = specs.interp_method;
+include_diagnostics = specs.include_diagnostics;
 
 % Compute which frames belong to which time bins
 binspacing = (nframes - binwidth)/(nTimeBin-1);
@@ -31,6 +34,12 @@ amp = zeros(1, nTimeBin);
 width = zeros(1, nTimeBin);
 
 goodinitial = true(1,nTimeBin);
+npoints = zeros(1,nTimeBin);
+
+if include_diagnostics
+    finalfits = cell(1,nTimeBin);
+    Csms = cell(1,nTimeBin);
+end
 
 % helper function for getting data
 getnthdata = @(n) data(firstframe(n):lastframe(n));
@@ -64,10 +73,26 @@ fgo.Upper = [Inf,Inf,npx,npx,Inf];
 
 % Compute xcors, and resulting offsets
 refdata = getnthdata(1);
-for i = 2:nTimeBin
+npoints(1) = numel([refdata.x]);
+refbin = 1;
+while npoints(refbin) == 0;
+    refbin = refbin + 1;
+    if refbin > nTimeBin
+        error('None of the timebins contain points!')
+    end
+    refdata = getnthdata(refbin);
+    npoints(refbin) = numel([refdata.x]);
+end
+
+for i = (refbin + 1):nTimeBin
     thisdata  = getnthdata(i);
 
-    C = xcor_dirty(refdata,thisdata, psize, rmax);
+    npoints(i) = numel([thisdata.x]);
+    if npoints(i) == 0
+        continue;
+    end
+        
+    C = xcor_dirty(refdata, thisdata, psize, rmax);
     
     % First fit, large box centered on no shift
     smallinds1 = round(size(C,1)/2) + pxrange1;
@@ -100,10 +125,11 @@ for i = 2:nTimeBin
         smallinds1 = round(F1.y0) + pxrange;
         smallinds2 = round(F1.x0) + pxrange;
         
-        Csm2 = Csm(smallinds1, smallinds2);
         fgo.StartPoint = [Csm(round(F1.y0), round(F1.x0)), 2/psize, ...
             rmaxpx+1, rmaxpx+1, 0];
-        F = fit([x(:), y(:)], Csm2(:), fitgauss, fgo);
+
+        Csm = Csm(smallinds1, smallinds2);
+        F = fit([x(:), y(:)], Csm(:), fitgauss, fgo);
         
         xshift(i) = (F.x0 - rmaxpx - 1 + round(F1.x0) - rmaxpx1 - 1)*psize;
         yshift(i) = (F.y0 - rmaxpx - 1 + round(F1.y0) - rmaxpx1 - 1)*psize;
@@ -118,7 +144,12 @@ for i = 2:nTimeBin
     dyshift(i) = d(4);
     
     amp(i) = finalfit.A;
-    width(i) = finalfit.s;
+    width(i) = finalfit.s*psize;
+
+    if include_diagnostics
+        finalfits{i} = finalfit;
+        Csms{i} = Csm;
+    end
     
     % Use this to debug large shifts
 %     if max(xshift(i), yshift(i)) > 2
@@ -128,9 +159,33 @@ for i = 2:nTimeBin
     % Also TODO: handle update_reference_image flag
 end
 
+% interpolate
+if isempty(timings)
+    timings = 1:nframes;
+end
+
+midtiming = zeros(1,nTimeBin);
+for i  = 1:nTimeBin
+    midtiming(i) = mean(timings(firstframe(i):lastframe(i)));
+end
+
+xfit = interp1(midtiming, xshift, timings, interp_method, 'extrap');
+yfit = interp1(midtiming, yshift, timings, interp_method, 'extrap');
 
 % Diagnostics?
+diag.xshift = xshift;
+diag.yshift = yshift;
 diag.dxshift = dxshift;
 diag.dyshift = dyshift;
 diag.amplitude = amp;
 diag.fitwidth = width;
+diag.xfit = xfit;
+diag.yfit = yfit;
+diag.timings = timings;
+diag.midtiming = midtiming;
+if include_diagnostics
+    diag.finalfits = finalfits;
+    diag.Csms = Csms;
+end
+
+shifteddata = apply_shifts(olddata, diag);
