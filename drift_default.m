@@ -19,11 +19,13 @@ end
 options.npoints_for_alignment= 10;
 options.nframes_per_alignment= 500;
 options.interp_method= 'linear';
-options.psize_for_alignment= 10*fac;
-options.rmax_shift = 1000*fac;
-options.rmax= 200*fac;
+options.psize_for_alignment= 30*fac;
+options.rmax_shift = 2000*fac;
+options.rmax= 400*fac;
+options.sigma_startpt = 50*fac;
 options.update_reference_flag= true;
 options.include_diagnostics = true;
+options.units = units;
 %options.align_to_image_flag= 0;
 %options.align_to_TIR_flag= 0;
 %options.display_results_flag= 1;

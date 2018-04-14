@@ -14,6 +14,7 @@ nframes = numel(data);
 psize = specs.psize_for_alignment;
 rmax1 = specs.rmax_shift;
 rmax = specs.rmax;
+sigma_startpt = specs.sigma_startpt/psize;
 update = specs.update_reference_flag;
 interp_method = specs.interp_method;
 include_diagnostics = specs.include_diagnostics;
@@ -34,6 +35,7 @@ amp = zeros(1, nTimeBin);
 width = zeros(1, nTimeBin);
 
 goodinitial = true(1,nTimeBin);
+goodinds = true(1,nTimeBin);
 npoints = zeros(1,nTimeBin);
 
 if include_diagnostics
@@ -63,19 +65,22 @@ fitgauss = fittype(...
         'indep', {'x', 'y'}, 'dep', 'z');
     
 % Fit options for first fit, using L-M
-fgo1 = fitoptions(fitgauss);
-fgo1.Algorithm = 'Levenberg-Marquardt';
+% fgo1 = fitoptions(fitgauss);
+% fgo1.Algorithm = 'Levenberg-Marquardt';
 
 % Fit options for more refined fit, using Trust-Region algorithm
 fgo = fitoptions(fitgauss);
 fgo.Lower = [1,0,1,1,0];
 fgo.Upper = [Inf,Inf,npx,npx,Inf];
 
+fgo1 = fgo;
+fgo1.Upper = [Inf, Inf, npx1, npx1, Inf];
+
 % Compute xcors, and resulting offsets
 refdata = getnthdata(1);
 npoints(1) = numel([refdata.x]);
 refbin = 1;
-while npoints(refbin) == 0;
+while npoints(refbin) == 0
     refbin = refbin + 1;
     if refbin > nTimeBin
         error('None of the timebins contain points!')
@@ -89,6 +94,7 @@ for i = (refbin + 1):nTimeBin
 
     npoints(i) = numel([thisdata.x]);
     if npoints(i) == 0
+        goodinds(i) = false;
         continue;
     end
         
@@ -99,34 +105,37 @@ for i = (refbin + 1):nTimeBin
     smallinds2 = round(size(C,2)/2) + pxrange1;
 
     Csm = C(smallinds1, smallinds2);
+    Cmin = min(Csm(:));
+    Cmean = mean(Csm(:));
+    cx = mean((1:npx1).* (mean(Csm, 1) - Cmin))/(Cmean-Cmin);
+    cy = mean((1:npx1).* (mean(Csm, 2)' - Cmin))/(Cmean-Cmin);
 
-    cx = mean((1:npx1).* mean(Csm, 1))/ mean(Csm(:));
-    cy = mean((1:npx1).* (mean(Csm, 2)'))/mean(Csm(:));
-
-    fgo1.StartPoint = [Csm(round(cy),round(cx)), 2/psize, cx, cy, 0];
+    fgo1.StartPoint = [Csm(round(cy),round(cx)) - Cmin, sigma_startpt,...
+                            cx, cy, Cmin];
     F1 = fit([x1(:), y1(:)], Csm(:), fitgauss,fgo1);
     
-    if F1.s < 2/psize % First fit is good enough
+    outofframe = F1.x0 < rmaxpx || F1.x0 > npx1 - rmaxpx ||...
+                        F1.y0 < rmaxpx || F1.y0 > npx1 - rmaxpx;
+    % Fail if the first fit was off the large fitting frame
+    % Not sure if this is the best way to go yet, we'll see how
+    % often this happens
+    if outofframe
+        error(['First fit gave a result bigger than rmax_shift.\n'...
+            'Try changing the value?']);
+    end
+        
+    if F1.s < sigma_startpt % First fit is good enough
         xshift(i) = (F1.x0 - rmaxpx1 - 1)*psize;
         yshift(i) = (F1.y0 - rmaxpx1 - 1)*psize;
 
         finalfit = F1; %for extracting parameters for diag
     else
-        outofframe = F1.x0 < rmaxpx || F1.x0 > npx1 - rmaxpx ||...
-                        F1.y0 < rmaxpx || F1.y0 > npx1 - rmaxpx;
-        % Fail if the first fit was off the large fitting frame
-        % Not sure if this is the best way to go yet, we'll see how
-        % often this happens
-        if outofframe
-            error(['First fit gave a result bigger than rmax_shift.\n'...
-                'Try changing the value?']);
-        end
         goodinitial(i) = false;
         smallinds1 = round(F1.y0) + pxrange;
         smallinds2 = round(F1.x0) + pxrange;
         
-        fgo.StartPoint = [Csm(round(F1.y0), round(F1.x0)), 2/psize, ...
-            rmaxpx+1, rmaxpx+1, 0];
+        fgo.StartPoint = [Csm(round(F1.y0), round(F1.x0)) - Cmin, sigma_startpt, ...
+            rmaxpx+1, rmaxpx+1, Cmin];
 
         Csm = Csm(smallinds1, smallinds2);
         F = fit([x(:), y(:)], Csm(:), fitgauss, fgo);
@@ -164,13 +173,15 @@ if isempty(timings)
     timings = 1:nframes;
 end
 
-midtiming = zeros(1,nTimeBin);
-for i  = 1:nTimeBin
-    midtiming(i) = mean(timings(firstframe(i):lastframe(i)));
+goodinds = find(goodinds);
+midtiming = zeros(size(goodinds));
+for i  = 1:numel(goodinds)
+    ii = goodinds(i);
+    midtiming(i) = mean(timings(firstframe(ii):lastframe(ii)));
 end
 
-xfit = interp1(midtiming, xshift, timings, interp_method, 'extrap');
-yfit = interp1(midtiming, yshift, timings, interp_method, 'extrap');
+xfit = interp1(midtiming, xshift(goodinds), timings, interp_method, 'extrap');
+yfit = interp1(midtiming, yshift(goodinds), timings, interp_method, 'extrap');
 
 % Diagnostics?
 diag.xshift = xshift;
@@ -183,6 +194,8 @@ diag.xfit = xfit;
 diag.yfit = yfit;
 diag.timings = timings;
 diag.midtiming = midtiming;
+diag.goodinitial = goodinitial;
+diag.npoints = npoints;
 if include_diagnostics
     diag.finalfits = finalfits;
     diag.Csms = Csms;
