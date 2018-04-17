@@ -23,8 +23,8 @@ yextent = miny + [0, l];
 iref = imref2d([lpix,wpix], xextent, yextent);
 
 % generate storm images
-[I1_raw] = reconstruct([data1.x], [data1.y], iref);
-[I2_raw] = reconstruct([data2.x], [data2.y], iref);
+[I1_raw] = reconstruct(data1, iref);
+[I2_raw] = reconstruct(data2, iref);
 
 psize = iref.PixelExtentInWorldX;
 if abs(iref.PixelExtentInWorldY - psize) > 1e-8

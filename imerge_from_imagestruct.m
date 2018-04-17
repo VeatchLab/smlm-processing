@@ -4,12 +4,9 @@ ir = default_iref(istruct.data{1}, istruct.psize);
 
 d1 = istruct.data{1};
 d2 = istruct.data{2};
-x1 = d1.x; y1 = d1.y;
-x2 = d2.x; y2 = d2.y;
 
-
-I1 = reconstruct(x1, y1, ir);
-I2 = reconstruct(x2, y2, ir);
+I1 = reconstruct(d1, ir);
+I2 = reconstruct(d2, ir);
 
 % sigmas need to be in units of reconstruction pixels
 sigma1 = istruct.sigmablur{1}/istruct.psize; 

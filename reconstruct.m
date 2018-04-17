@@ -1,14 +1,16 @@
-function I = reconstruct(xs, ys, ireg)
-% use ireg
+function I = reconstruct(data, iref)
+% use iref
 
-left = ireg.XWorldLimits(1);
-right = ireg.XWorldLimits(2);
-top = ireg.YWorldLimits(1);
-bottom = ireg.YWorldLimits(2);
-pwidth = ireg.PixelExtentInWorldX;
-pheight = ireg.PixelExtentInWorldY;
+left = iref.XWorldLimits(1);
+right = iref.XWorldLimits(2);
+top = iref.YWorldLimits(1);
+bottom = iref.YWorldLimits(2);
+pwidth = iref.PixelExtentInWorldX;
+pheight = iref.PixelExtentInWorldY;
 
 xedges = left:pwidth:right;
 yedges = top:pheight:bottom;
+
+xs = [data.x]; ys = [data.y];
 
 I = histcounts2(ys, xs, yedges, xedges);

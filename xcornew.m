@@ -15,8 +15,8 @@ iref = imref2d([lpix,wpix], xextent, yextent);
 BW = roipoly(zeros(iref.ImageSize), col, row);
 
 % generate storm images
-[I1_raw] = reconstruct([data1.x], [data1.y], iref);
-[I2_raw] = reconstruct([data2.x], [data2.y], iref);
+[I1_raw] = reconstruct(data1, iref);
+[I2_raw] = reconstruct(data2, iref);
 
 I1_masked = I1_raw .* BW;
 I2_masked = I2_raw .* BW;
