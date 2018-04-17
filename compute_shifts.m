@@ -140,8 +140,9 @@ for i = (refbin + 1):nTimeBin
         Csm = Csm(smallinds1, smallinds2);
         F = fit([x(:), y(:)], Csm(:), fitgauss, fgo);
         
-        xshift(i) = (F.x0 - rmaxpx - 1 + round(F1.x0) - rmaxpx1 - 1)*psize;
-        yshift(i) = (F.y0 - rmaxpx - 1 + round(F1.y0) - rmaxpx1 - 1)*psize;
+        % I think the - sign is right
+        xshift(i) = -(F.x0 - rmaxpx - 1 + round(F1.x0) - rmaxpx1 - 1)*psize;
+        yshift(i) = -(F.y0 - rmaxpx - 1 + round(F1.y0) - rmaxpx1 - 1)*psize;
 
         finalfit = F; %for extracting parameters for diag
     end
@@ -165,7 +166,10 @@ for i = (refbin + 1):nTimeBin
 %         keyboard;
 %     end
     
-    % Also TODO: handle update_reference_image flag
+    % handle update_reference_image flag
+    if update
+        refdata = [refdata translatepts(thisdata,-xshift(i),-yshift(i))];
+    end
 end
 
 % interpolate
