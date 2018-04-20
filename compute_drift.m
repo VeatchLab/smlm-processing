@@ -1,4 +1,4 @@
-function [shifteddata, diag] = compute_shifts(data, timings, specs)
+function [shifteddata, drift_info] = compute_drift(data, timings, specs)
 
 olddata = data;
 % Put the data in the right shape
@@ -187,22 +187,22 @@ end
 xfit = interp1(midtiming, xshift(goodinds), timings, interp_method, 'extrap');
 yfit = interp1(midtiming, yshift(goodinds), timings, interp_method, 'extrap');
 
-% Diagnostics?
-diag.xshift = xshift;
-diag.yshift = yshift;
-diag.dxshift = dxshift;
-diag.dyshift = dyshift;
-diag.amplitude = amp;
-diag.fitwidth = width;
-diag.xfit = xfit;
-diag.yfit = yfit;
-diag.timings = timings;
-diag.midtiming = midtiming;
-diag.goodinitial = goodinitial;
-diag.npoints = npoints;
-if include_diagnostics
-    diag.finalfits = finalfits;
-    diag.Csms = Csms;
+% info and diagnostics
+drift_info.xshift = xshift;
+drift_info.yshift = yshift;
+drift_info.dxshift = dxshift;
+drift_info.dyshift = dyshift;
+drift_info.amplitude = amp;
+drift_info.fitwidth = width;
+drift_info.xfit = xfit;
+drift_info.yfit = yfit;
+drift_info.timings = timings;
+drift_info.midtiming = midtiming;
+drift_info.goodinitial = goodinitial;
+drift_info.npoints = npoints;
+if include_diagnostics % optional because potentially large
+    drift_info.finalfits = finalfits;
+    drift_info.Csms = Csms;
 end
 
-shifteddata = apply_shifts(olddata, diag);
+shifteddata = apply_shifts(olddata, drift_info);
