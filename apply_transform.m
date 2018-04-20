@@ -1,4 +1,4 @@
-function tformdata = apply_transform_new(indata, tform, maxval)
+function tformdata = apply_transform(indata, tform, maxval)
 if nargin<3
     maxval = 1e5;
 end
