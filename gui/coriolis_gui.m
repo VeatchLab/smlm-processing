@@ -22,7 +22,7 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 23-Apr-2018 13:30:33
+% Last Modified by GUIDE v2.5 25-Apr-2018 15:27:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -48,11 +48,29 @@ handles.output = hObject;
 
 % Deal with files and stuff
 handles.here = cd;
-handles.record_fname = 'record.mat';
-handles = load_all(handles);
+if exist('record.mat', 'file')
+    handles.record_fname = 'record.mat';
+    handles = load_all(handles);
+    guidata(hObject, handles);
+else
+    % ask whether to load another file or make a new one
+    question = 'record.mat not found: make new record or open record with other name?';
+    answer = questdlg(question, 'record...', 'New record', 'Open record', 'Cancel',...
+                        'New record');
+    switch answer
+        case 'Cancel'
+            % exit immediately
+            close(handles.figure1);
+            return;
+        case 'New record'
+            % Ask: single or dual, and a filename
+            new_button_Callback(handles.new_button, [], handles)
+        case 'Open record'
+            % like pressing 'choose'
+            choose_button_Callback(handles.choose_button, [], handles)
+    end
 
-guidata(hObject, handles);
-
+end
 
 function varargout = coriolis_gui_OutputFcn(hObject, ~, handles)
 varargout{1} = handles.output;
@@ -71,13 +89,32 @@ set(handles.culled_fname_edit, 'String', record.culled_fname);
 set(handles.final_fname_edit, 'String', record.final_fname);
 
 function handles = load_all(handles)
-% record
-record = load_record(handles.record_fname);
+% record: load if it exists, make a new one if not
+if exist(handles.record_fname, 'file')
+    record = load(handles.record_fname);
+    handles.nchannels = numel(record.SPspecs);
+else
+    record = SP_record_default(handles.nchannels)
+end
+
 handles.record = record;
 
 set_fname_fields(handles);
 
 cd(handles.here);
+
+% enable/disable buttons/fields
+if handles.nchannels == 1
+    set(handles.choose_transform_button, 'Enable', 'off');
+    set(handles.transformed_fname_edit, 'Enable', 'off');
+    set(handles.cullspec2_button, 'Enable', 'off');
+elseif handles.nchannels == 2
+    set(handles.choose_transform_button, 'Enable', 'on');
+    set(handles.transformed_fname_edit, 'Enable', 'on');
+    set(handles.cullspec2_button, 'Enable', 'on');
+else
+    warning('I don''t know how to handle that number of channels, proceed at own risk');
+end
 
 % datasets
 fnames = {record.fits_fname, record.transformed_fname, ...
@@ -202,11 +239,20 @@ else
     warning('no drift-corrected data to save');
 end
 
-function record = load_record(fname)
-if exist(fname, 'file')
-    record = load(fname);
+% Get filename for new record
+function fname = ask_for_record_fname(titlestr)
+answer = inputdlg('Input name for new record file:', titlestr);
+
+if isempty(answer) % user pressed cancel
+    fname = '';
 else
-    record = SP_record_default();
+    fname = mat_ify(answer{1});
+end
+
+% add .mat if appropriate
+function fname = mat_ify(fname)
+if length(fname) < 4 || ~strcmp(fname((end-3):end), '.mat')
+    fname = [fname '.mat'];
 end
 
 function specs = getspecs(handles)
@@ -249,6 +295,27 @@ handles.record_fname = fname;
 
 handles = load_all(handles);
 
+guidata(hObject, handles);
+
+function new_button_Callback(hObject, ~, handles)
+% Ask: single or dual
+answer = questdlg('Single or dualview?', 'channels', 'Single', 'Dual', 'Dual');
+switch answer
+    case 'Single'
+        handles.nchannels = 1;
+    case 'Dual'
+        handles.nchannels = 2;
+end
+
+record_fname = ask_for_record_fname('New record...');
+
+if isempty(record_fname)
+    error('new record: aborted by user');
+end
+
+handles.record_fname = record_fname;
+
+handles = load_all(handles);
 guidata(hObject, handles);
 
 function runall_button_Callback(hObject, ~, handles)
@@ -302,28 +369,32 @@ if isempty(fits)
     error('geometry: No fits yet, aborting');
 end
 
-transf_fname = handles.record.dv_transform_fname;
-if exist(transf_fname, 'file')
-    % the transform structures only have reverse transforms,
-    % so we need T_1_2 to transform 2->1
-    tf = load(transf_fname, 'T_1_2');
-    tf = tf.T_1_2;
-else
-    error('dualview transform file not specified or does not exist');
+if handles.nchannels == 2 % only transform if dualview
+
+    transf_fname = handles.record.dv_transform_fname;
+    if exist(transf_fname, 'file')
+        % the transform structures only have reverse transforms,
+        % so we need T_1_2 to transform 2->1
+        tf = load(transf_fname, 'T_1_2');
+        tf = tf.T_1_2;
+    else
+        error('dualview transform file not specified or does not exist');
+    end
+
+    % transform
+    set(handles.dilated_stat, 'String', 'Applying Transform ...');
+    drawnow;
+
+    [tfdata] = apply_transform(fits.data{2}, tf);
+
+    transformed.data = {fits.data{1}, tfdata};
+    transformed.date = datetime;
+    transformed.produced_by = 'apply_transform';
+    transformed.units = 'px';
+
+    handles.transformed = transformed;
+
 end
-
-% transform
-set(handles.dilated_stat, 'String', 'Applying Transform ...');
-drawnow;
-
-[tfdata] = apply_transform(fits.data{2}, tf);
-
-transformed.data = {fits.data{1}, tfdata};
-transformed.date = datetime;
-transformed.produced_by = 'apply_transform';
-transformed.units = 'px';
-
-handles.transformed = transformed;
 
 % pixel size
 set(handles.dilated_stat, 'String', 'Converting to nm ...');
@@ -331,8 +402,15 @@ drawnow;
 
 dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %to nm
 
+% do to different datasets depending on number of channels
+if handles.nchannels == 1
+    startdata = fits;
+elseif handles.nchannels == 2
+    startdata = transformed;
+end
+
 % apply the dilation to each channel
-dilateddata = cellfun(@(d) dilatepts(d, dilatefac), transformed.data,...
+dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...
                 'UniformOutput', false);
 
 dilated.data = dilateddata;
@@ -365,7 +443,7 @@ else
     cs = handles.record.cullspecs;
 end
 
-if nocs || isempty(cs) || isempty(cs{1}) || isempty(cs{2})
+if nocs || isempty(cs) || any(cellfun(@isempty, cs))
     error('cull: no cull specs, aborting');
 end
 
@@ -379,9 +457,12 @@ drawnow;
 
 dilated = getdataset(handles, 'dilated');
 
-culled.data = cell(1,2);
-culled.data{1} = cullSTORM(dilated.data{1}, cs{1});
-culled.data{2} = cullSTORM(dilated.data{2}, cs{2});
+%culled.data = cell(1,2);
+%culled.data{1} = cullSTORM(dilated.data{1}, cs{1});
+%culled.data{2} = cullSTORM(dilated.data{2}, cs{2});
+
+% this should work independent of number of channels
+culled.data = cellfun(@cullSTORM, dilated.data, cs, 'UniformOutput', false);
 
 culled.date = datetime;
 culled.produced_by = 'cullSTORM';
@@ -417,10 +498,12 @@ drawnow;
 
 culled = getdataset(handles, 'culled');
 
-final.data = cell(1,2);
+final.data = cell(1,handles.nchannels);
 %TODO: correct timing data!
 [final.data{1}, drift_info] = compute_drift(culled.data{1}, [], driftspecs);
-[final.data{2}] = apply_shifts(culled.data{2}, drift_info);
+if handles.nchannels > 1
+    [final.data{2}] = apply_shifts(culled.data{2}, drift_info);
+end
 
 final.date = datetime;
 final.produced_by = 'compute_drift';
@@ -442,10 +525,7 @@ if iscell(fname) % This happened once, never figured out why
     fname = fname{1};
 end
 
-% add .mat if appropriate
-if length(fname) < 4 || ~strcmp(fname((end-3):end), '.mat')
-    fname = [fname '.mat'];
-end
+fname = mat_ify(fname); % add .mat if appropriate
 set(hObject, 'String', fname);
 
 handles.record.(fname_name) = fname;
@@ -455,19 +535,12 @@ guidata(hObject, handles);
 function fork_record_button_Callback(hObject, ~, handles)
 % Get filename for new record
 titlestr = 'Fork record...';
-answer = inputdlg('Input name for new record file:', titlestr);
-
-if isempty(answer) % user pressed cancel
+record_fname = ask_for_record_fname(titlestr);
+if isempty(record_fname) % user pressed cancel
     return;
 end
 
-record_fname = answer{1};
 record = handles.record;
-
-if length(answer) < 4 || ~strcmp(answer((end-3):end), '.mat')
-    record_fname = [record_fname, '.mat'];
-end
-
 % Ask user where fork should happen
 liststr = {'fits', 'transform', 'dilation', 'culling', 'drift correction'};
 prompt = 'What processing step do you want to fork before?';
@@ -509,4 +582,3 @@ handles.record_fname = record_fname;
 
 set_fname_fields(handles);
 guidata(hObject, handles);
-
