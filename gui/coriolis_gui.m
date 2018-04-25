@@ -241,7 +241,7 @@ end
 
 % Get filename for new record
 function fname = ask_for_record_fname(titlestr)
-answer = inputdlg('Input name for new record file:', titlestr);
+answer = inputdlg('Input name for new record file:', titlestr, 1, 'record.mat');
 
 if isempty(answer) % user pressed cancel
     fname = '';
@@ -320,9 +320,9 @@ guidata(hObject, handles);
 
 function runall_button_Callback(hObject, ~, handles)
 dofits_button_Callback(hObject, [], handles);
-geo_button_Callback(hObject, [], handles);
-cull_button_Callback(hObject, [], handles);
-compute_drift_button_Callback(hObject, [], handles);
+geo_button_Callback(hObject, [], guidata(hObject));
+cull_button_Callback(hObject, [], guidata(hObject));
+compute_drift_button_Callback(hObject, [], guidata(hObject));
 
 function edit_fitspecs_button_Callback(hObject, ~, handles)
 error('not implemented');
