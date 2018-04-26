@@ -22,7 +22,7 @@ function varargout = inspect_STORMdata(varargin)
 
 % Edit the above text to modify the response to help inspect_STORMdata
 
-% Last Modified by GUIDE v2.5 25-Apr-2018 20:12:20
+% Last Modified by GUIDE v2.5 26-Apr-2018 09:58:29
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -86,6 +86,7 @@ handles.im = imshow(handles.Itoshow, handles.istruct.imageref, ...
                 'Parent', r_axes);
 zoom(r_axes, 'on');
 handles.pts = [];
+handles.cbar = [];
 
 handles.npts1_axes = axes('Parent', handles.nperframe_panel, 'Units', 'Normalized',...
                 'Position', [0.2, 0.1, .75, .35]);
@@ -197,7 +198,7 @@ if redrawimage
     if all(usechan)
         handles.Itoshow = handles.Merge;
     elseif ~any(usechan)
-        handles.Itoshow = zeros(handles.istruct.imageref.ImageSize);
+        handles.Itoshow = zeros([handles.istruct.imageref.ImageSize, 3]);
     else
         ind = find(usechan);
         handles.Itoshow = handles.I{ind(1)};
@@ -216,13 +217,27 @@ if redrawpoints
     
     if isempty(handles.pts)
         hold(handles.r_axes, 'on');
-        handles.pts = plot(handles.r_axes, handles.x, handles.y, '.', ...
-            'Marker', handles.m, 'Color', handles.c);
-    else
+        handles.pts = scatter(handles.r_axes, handles.x, handles.y, 9, ...
+            handles.c, 'Marker', handles.m);
+    elseif ~isempty(handles.x)
         set(handles.pts, 'Xdata', handles.x, 'Ydata', handles.y,...
-            'Color', handles.c, 'Marker', handles.m);
+            'CData', handles.c, 'Marker', handles.m);
+    else
+        delete(handles.pts);
+        handles.pts = [];
+    end
+    
+    if size(handles.c) == size(handles.x)
+        handles.cbar = colorbar('peer', handles.r_axes);
+    elseif ~isempty(handles.cbar);
+        colorbar(handles.cbar, 'off');
+        handles.cbar = [];
     end
         
 end
 
 guidata(hObject, handles);
+
+function save_button_Callback(hObject, ~, handles)
+
+imwrite(handles.Itoshow, 'img.tif');
