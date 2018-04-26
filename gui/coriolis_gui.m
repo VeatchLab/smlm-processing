@@ -22,10 +22,10 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 25-Apr-2018 15:27:06
+% Last Modified by GUIDE v2.5 25-Apr-2018 18:57:59
 
 % Begin initialization code - DO NOT EDIT
-gui_Singleton = 1;
+gui_Singleton = 0;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
                    'gui_OpeningFcn', @coriolis_gui_OpeningFcn, ...
@@ -45,6 +45,7 @@ end
 
 function coriolis_gui_OpeningFcn(hObject, ~, handles, varargin)
 handles.output = hObject;
+guidata(hObject, handles);
 
 % Deal with files and stuff
 handles.here = cd;
@@ -73,7 +74,9 @@ else
 end
 
 function varargout = coriolis_gui_OutputFcn(hObject, ~, handles)
-varargout{1} = handles.output;
+if ~isempty(handles)
+    varargout{1} = handles.output;
+end
 
 %% My functions
 function set_fname_fields(handles)
@@ -94,7 +97,7 @@ if exist(handles.record_fname, 'file')
     record = load(handles.record_fname);
     handles.nchannels = numel(record.SPspecs);
 else
-    record = SP_record_default(handles.nchannels)
+    record = SP_record_default(handles.nchannels);
 end
 
 handles.record = record;
@@ -241,7 +244,7 @@ end
 
 % Get filename for new record
 function fname = ask_for_record_fname(titlestr)
-answer = inputdlg('Input name for new record file:', titlestr, 1, 'record.mat');
+answer = inputdlg({'Input name for new record file:'}, titlestr, 1, {'record.mat'});
 
 if isempty(answer) % user pressed cancel
     fname = '';
@@ -424,14 +427,16 @@ guidata(hObject, handles);
 set(handles.dilated_stat, 'String', {'done', char(dilated.date)});
 
 function cullspec1_button_Callback(hObject, ~, handles)
+dilated = getdataset(handles, 'dilated');
 cs1 = handles.record.cullspecs{1};
-cs1 = cullspec_gui(cs1, handles.dilated.data{1});
+cs1 = cullspec_gui(cs1, dilated.data{1});
 handles.record.cullspecs{1} = cs1;
 guidata(hObject, handles);
 
 function cullspec2_button_Callback(hObject, ~, handles)
+dilated = getdataset(handles, 'dilated');
 handles.record.cullspecs{2} = cullspec_gui(handles.record.cullspecs{2}, ...
-    handles.dilated.data{2});
+    dilated.data{2});
 guidata(hObject, handles);
 
 function cull_button_Callback(hObject, ~, handles)
@@ -582,3 +587,12 @@ handles.record_fname = record_fname;
 
 set_fname_fields(handles);
 guidata(hObject, handles);
+
+function inspect_button_Callback(hObject, ~, handles)
+tokens = regexp(hObject.Tag, '(\w+)_inspect_button','tokens');
+if isempty(tokens)
+    error('button tag not named right... check it out');
+end
+data_name = tokens{1}{1};
+d = getdataset(handles, data_name);
+inspect_STORMdata(d);
