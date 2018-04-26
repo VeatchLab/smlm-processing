@@ -131,7 +131,7 @@ switch hObject.Tag
         redrawimage = true;
         newcmax = str2double(get(hObject, 'String'));
         handles.istruct.cmax(2) = newcmax;
-    case {'overlay_ch1_checkbox', 'overlay_ch2_checkbox'}
+    case {'overlay_ch1_checkbox', 'overlay_ch2_checkbox', 'color_by_menu'}
         newptsdata = true;
         redrawpoints = true;
 end
@@ -153,15 +153,32 @@ if newdatarange % update image
 
 end
 
-if newptsdata
+if newptsdata % update which points are here
     handles.x = [];
     handles.y = [];
+    c_ind = get(handles.color_by_menu, 'Value');
+    color_by = get(handles.color_by_menu, 'String');
+    color_by = color_by{c_ind};
+    if strcmp(color_by, 'solid')
+    	handles.c = 'red';
+        c_field = false;
+    else
+        c_field = true;
+    end
     if get(handles.overlay_ch1_checkbox, 'Value')
         handles.x = [handles.data{1}(:).x];
         handles.y = [handles.data{1}(:).y];
+        if c_field
+            handles.c = [handles.data{1}(:).(color_by)];
+        end
+        set(handles.overlay_ch2_checkbox, 'Value', 0);
     elseif get(handles.overlay_ch2_checkbox, 'Value')
         handles.x = [handles.data{2}(:).x];
         handles.y = [handles.data{2}(:).y];
+        if c_field
+            handles.c = [handles.data{2}(:).(color_by)];
+        end
+        set(handles.overlay_ch1_checkbox, 'Value', 0);
     end
 end
 
@@ -195,7 +212,6 @@ if redrawimage
 end
 
 if redrawpoints
-    handles.c = 'red';
     handles.m = '.';
     
     if isempty(handles.pts)
