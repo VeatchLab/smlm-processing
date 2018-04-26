@@ -1,7 +1,12 @@
-function [Imerge, ir] = imerge_from_imagestruct(istruct)
+function [Imerge, If, ir] = imerge_from_imagestruct(istruct)
 
-
-ds = load(istruct.data_fname);
+if isfield(istruct, 'data') && ~isempty(istruct.data)
+    ds = istruct.data;
+elseif isfield(istruct, 'data_fname') && ~isempty(istruct.data_fname)
+    ds = load(istruct.data_fname);
+else
+    error('imerge_from_imagestruct: no data or data_fname');
+end
 
 if numel(ds.data) ~= istruct.channels
     error('imerge_from_imagestruct: data has different number of channels from imagestruct');
