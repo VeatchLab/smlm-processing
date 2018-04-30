@@ -1,4 +1,4 @@
-function olddata = new_to_old(newdata, data_fieldname, transposex_flag)
+function olddata = new_to_old(newdata, data_fieldname, transposex_flag,swapxy)
 % Turn old STORM_analyzer style struct-of-struct data
 % into new style 2d struct array
 
@@ -7,6 +7,9 @@ if nargin < 2
 end
 if nargin < 3
     transposex_flag = true;
+end
+if nargin < 4
+    swapxy = true;
 end
 
 [nmovies,nframes] = size(newdata);
@@ -20,6 +23,12 @@ for imov = 1:nmovies
         if transposex_flag
             olddata(imov).(data_fieldname)(iframe).x = reshape(newdata(imov,iframe).y, n,1);
             olddata(imov).(data_fieldname)(iframe).y = reshape(newdata(imov,iframe).x, n,1);
+        end
+        if swapxy
+            x = olddata(imov).(data_fieldname)(iframe).x;
+            olddata(imov).(data_fieldname)(iframe).x = ...
+                olddata(imov).(data_fieldname)(iframe).y;
+            olddata(imov).(data_fieldname)(iframe).y = x;
         end
     end
 end
