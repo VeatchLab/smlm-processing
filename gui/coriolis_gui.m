@@ -467,7 +467,8 @@ dilated = getdataset(handles, 'dilated');
 %culled.data{2} = cullSTORM(dilated.data{2}, cs{2});
 
 % this should work independent of number of channels
-culled.data = cellfun(@cullSTORM, dilated.data, cs, 'UniformOutput', false);
+[culled.data, handles.record.cullinds] = ...
+    cellfun(@cullSTORM, dilated.data, cs, 'UniformOutput', false);
 
 culled.date = datetime;
 culled.produced_by = 'cullSTORM';
@@ -506,6 +507,7 @@ culled = getdataset(handles, 'culled');
 final.data = cell(1,handles.nchannels);
 %TODO: correct timing data!
 [final.data{1}, drift_info] = compute_drift(culled.data{1}, [], driftspecs);
+handles.record.drift_info = drift_info;
 if handles.nchannels > 1
     [final.data{2}] = apply_shifts(culled.data{2}, drift_info);
 end
