@@ -49,7 +49,7 @@ guidata(hObject, handles);
 
 % Deal with files and stuff
 handles.here = cd;
-if exist('record.mat', 'file')
+if exist('./record.mat', 'file')
     handles.record_fname = 'record.mat';
     handles = load_all(handles);
     guidata(hObject, handles);
