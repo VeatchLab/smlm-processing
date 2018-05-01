@@ -329,6 +329,7 @@ compute_drift_button_Callback(hObject, [], guidata(hObject));
 
 function edit_fitspecs_button_Callback(hObject, ~, handles)
 handles.record.SPspecs = SPspec_gui(handles.record.SPspecs);
+guidata(hObject,handles);
 
 function dofits_button_Callback(hObject, ~, handles)
 % Handle prereqs
