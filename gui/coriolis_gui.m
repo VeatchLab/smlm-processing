@@ -328,7 +328,7 @@ cull_button_Callback(hObject, [], guidata(hObject));
 compute_drift_button_Callback(hObject, [], guidata(hObject));
 
 function edit_fitspecs_button_Callback(hObject, ~, handles)
-error('not implemented');
+handles.record.SPspecs = SPspec_gui(handles.record.SPspecs);
 
 function dofits_button_Callback(hObject, ~, handles)
 % Handle prereqs
