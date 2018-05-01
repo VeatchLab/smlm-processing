@@ -22,7 +22,7 @@ function varargout = SPspec_gui(varargin)
 
 % Edit the above text to modify the response to help SPspec_gui
 
-% Last Modified by GUIDE v2.5 01-May-2018 11:15:52
+% Last Modified by GUIDE v2.5 01-May-2018 13:15:01
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -86,6 +86,7 @@ end
 function update_fields_from_specs(handles, channel)
 specs = handles.specs;
 setup_table(handles);
+handles.selectedrows = [];
 
 s = specs(handles.channel);
 set(handles.thresh_edit, 'String', num2str(s.thresh));
@@ -101,12 +102,17 @@ function handles = update_fnames_from_table(handles)
 tdata = get(handles.fnames_table, 'Data');
 handles.all_fnames = tdata(:,1)';
 handles.whichchannels = cell2mat(tdata(:,2:end));
-for i = 1:handles.nchan
-    handles.specs(i).movie_fnames = ...
-        handles.all_fnames(handles.whichchannels(:,i));
+if ~isempty(handles.whichchannels)
+    for i = 1:handles.nchan
+        handles.specs(i).movie_fnames = ...
+            handles.all_fnames(handles.whichchannels(:,i));
+    end
+else
+    [handles.specs.movie_fnames] = deal({});
 end
 
 function add_files(handles, files)
+files = setdiff(files, handles.all_fnames, 'stable');
 newdata = [files(:), repmat({true}, numel(files), handles.nchan)];
 newdata = vertcat(get(handles.fnames_table, 'Data'), newdata);
 set(handles.fnames_table, 'Data', newdata);
@@ -180,9 +186,19 @@ add_files(handles, newfiles);
 guidata(hObject, update_fnames_from_table(handles));
 
 function add_re_button_Callback(hObject, ~, handles)
-guidata(hObject, update_fnames_from_table(handles));
+newre = inputdlg({'Give an expression to glob for'}, 'add files by glob',...
+    1, {'mov*.tif'});
+if ~isempty(newre)
+    newfiles = glob_fnames(newre{1});
+    add_files(handles,newfiles);
+    guidata(hObject, update_fnames_from_table(handles));
+end
 
 function remove_button_Callback(hObject, ~, handles)
+d = get(handles.fnames_table, 'Data');
+inds = setdiff(1:size(d,1), handles.selectedrows);
+set(handles.fnames_table, 'Data', d(inds, :));
+handles.selectedrows = [];
 guidata(hObject, update_fnames_from_table(handles));
 
 function thresh_edit_Callback(hObject, ~, handles)
@@ -190,3 +206,10 @@ val = str2num(get(hObject, 'String'));
 set(hObject, 'String', num2str(val));
 handles.specs(handles.channel).thresh = val;
 guidata(hObject, handles);
+
+function fnames_table_CellSelectionCallback(hObject, eventdata, handles)
+handles.selectedrows = eventdata.Indices(:,1);
+guidata(hObject,handles);
+
+function thresh_diag_button_Callback(~, ~, handles)
+threshold_diagnostics(handles.all_fnames);
