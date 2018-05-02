@@ -199,7 +199,8 @@ cd(handles.here);
 save(handles.record_fname, '-struct', 'record');
 
 % save fits
-if isfield(handles, 'fits') && ~isempty(handles.fits)
+if isfield(handles, 'fits') && ~isempty(handles.fits) && ...
+        ~isempty(handles.fits.data)
     fits = getdataset(handles, 'fits');
     save(record.fits_fname, '-struct', 'fits')
 else
@@ -217,7 +218,8 @@ if ~isempty(record.transformed_fname)
 end
 
 % save dilated
-if isfield(handles, 'dilated') && ~isempty(handles.dilated)
+if isfield(handles, 'dilated') && ~isempty(handles.dilated) && ...
+        ~isempty(handles.dilated.data)
     dilated = getdataset(handles, 'dilated');
     save(record.dilated_fname, '-struct', 'dilated')
 else
@@ -235,7 +237,8 @@ if ~isempty(record.culled_fname)
 end
 
 % save final data
-if isfield(handles, 'final') && ~isempty(handles.final)
+if isfield(handles, 'final') && ~isempty(handles.final) && ...
+        ~isempty(handles.final.data)
     final = getdataset(handles, 'final');
     save(record.final_fname, '-struct', 'final')
 else
