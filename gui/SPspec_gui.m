@@ -22,7 +22,7 @@ function varargout = SPspec_gui(varargin)
 
 % Edit the above text to modify the response to help SPspec_gui
 
-% Last Modified by GUIDE v2.5 01-May-2018 13:15:01
+% Last Modified by GUIDE v2.5 01-May-2018 18:02:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -89,6 +89,10 @@ setup_table(handles);
 handles.selectedrows = [];
 
 s = specs(handles.channel);
+set(handles.cdim1_edit, 'String', num2str(s.channel_dims(1)));
+set(handles.cdim2_edit, 'String', num2str(s.channel_dims(2)));
+set(handles.cdim3_edit, 'String', num2str(s.channel_dims(3)));
+set(handles.cdim4_edit, 'String', num2str(s.channel_dims(4)));
 set(handles.thresh_edit, 'String', num2str(s.thresh));
 
 
@@ -213,3 +217,20 @@ guidata(hObject,handles);
 
 function thresh_diag_button_Callback(~, ~, handles)
 threshold_diagnostics(handles.all_fnames);
+
+function cdim1_edit_Callback(hObject, eventdata, handles)
+handles.specs(handles.channel).channel_dims(1) = ...
+    round(str2num(get(hObject, 'String')));
+guidata(hObject, handles);
+function cdim2_edit_Callback(hObject, eventdata, handles)
+handles.specs(handles.channel).channel_dims(2) = ...
+    round(str2num(get(hObject, 'String')));
+guidata(hObject, handles);
+function cdim3_edit_Callback(hObject, eventdata, handles)
+handles.specs(handles.channel).channel_dims(3) = ...
+    round(str2num(get(hObject, 'String')));
+guidata(hObject, handles);
+function cdim4_edit_Callback(hObject, eventdata, handles)
+handles.specs(handles.channel).channel_dims(4) = ...
+    round(str2num(get(hObject, 'String')));
+guidata(hObject, handles);
