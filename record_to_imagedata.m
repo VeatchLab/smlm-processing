@@ -17,6 +17,12 @@ id = repmat(struct('raw_data_filenames',[],'TIR_image_filename',[], ...
         'Ctot_raw', []),...
         1,nchan);
     
+if nchan == 1 & exist('./imagedata.mat', 'file')
+    id = load('imagedata.mat');
+elseif nchan == 2 & exist('./imagedata1.mat', 'file')
+    id(1) = load('imagedata2.mat'); id(2) = load('imagedata1.mat');
+end
+
 for ichan = 1:nchan
     SPspecs = record.SPspecs(ichan);
     
