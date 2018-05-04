@@ -512,11 +512,14 @@ culled = getdataset(handles, 'culled');
 
 final.data = cell(1,handles.nchannels);
 
-timing = zeros(1, numel(final.data{1}));
-nframes = size(final.data{1},2);
-for i = 1:size(final.data{1},1)
-    timing((1:nframes) + (i-1)*nframes) = record.metadata(i).start_time + ...
-                                                record.metadata(i).timestamp;
+timing = zeros(1, numel(culled.data{1}));
+nframes = size(culled.data{1},2);
+mdata = handles.record.metadata;
+for i = 1:size(culled.data{1},1)
+    dvec = datevec(mdata(i).start_time);
+    Tstart = 60*[0 0 60*24 60 1 1/60]*dvec';
+    timing((1:nframes) + (i-1)*nframes) = Tstart + ...
+                                                mdata(i).timestamp;
 end
 
 [final.data{1}, drift_info] = compute_drift(culled.data{1}, timing, driftspecs);
