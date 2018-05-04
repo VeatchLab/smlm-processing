@@ -1,4 +1,4 @@
 all:
 
 deploy:
-	cp -r *.m gui/ compat/ /lipid/group/global\ mfiles/STORManalysis/
+	rsync -rvu --delete src/ /lipid/group/global\ mfiles/STORManalysis/
