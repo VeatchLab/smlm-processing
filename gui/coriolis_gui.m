@@ -342,7 +342,7 @@ specs = getspecs(handles);
 set(handles.fits_stat, 'String', 'Fitting ...');
 drawnow;
 
-[data, ~] = STORMprocess(specs);
+[data, ~, metadata] = STORMprocess(specs);
 
 fits.data = data;
 fits.date = datetime;
@@ -350,6 +350,8 @@ fits.produced_by = 'STORMprocess';
 fits.units = 'px';
 
 handles.fits = fits;
+
+handles.record.metadata = metadata;
 guidata(hObject, handles);
 set(handles.fits_stat, 'String', {'done', char(fits.date)});
 
@@ -509,8 +511,15 @@ drawnow;
 culled = getdataset(handles, 'culled');
 
 final.data = cell(1,handles.nchannels);
-%TODO: correct timing data!
-[final.data{1}, drift_info] = compute_drift(culled.data{1}, [], driftspecs);
+
+timing = zeros(1, numel(final.data{1}));
+nframes = size(final.data{1},2);
+for i = 1:size(final.data{1},1)
+    timing((1:nframes) + (i-1)*nframes) = record.metadata(i).start_time + ...
+                                                record.metadata(i).timestamp;
+end
+
+[final.data{1}, drift_info] = compute_drift(culled.data{1}, timing, driftspecs);
 handles.record.drift_info = drift_info;
 if handles.nchannels > 1
     [final.data{2}] = apply_shifts(culled.data{2}, drift_info);
