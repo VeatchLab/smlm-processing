@@ -17,7 +17,7 @@ end
 olddata = repmat(struct(data_fieldname,[]),1,nmovies);
 
 for imov = 1:nmovies
-    olddata(imov).data = newdata(imov,:);
+    olddata(imov).(data_fieldname) = newdata(imov,:);
     for iframe = 1:nframes
         n = numel(newdata(imov,iframe).x);
         if transposex_flag
