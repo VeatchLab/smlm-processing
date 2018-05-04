@@ -1,7 +1,8 @@
-% function record_to_imagedata(record_fname)
+function record_to_imagedata(record_fname)
 
 record = load(record_fname);
 finaldata = load(record.final_fname);
+fits = load(record.fits_fname);
 
 nchan = numel(record.SPspecs);
 
@@ -63,6 +64,8 @@ for ichan = 1:nchan
     
     id(ichan).image_process_specs = oldspecs;
     
+    id(ichan).processed_image_data = new_to_old(fits.data{ichan});
+    
     % skip cull_specs
     % final_image_specs
     fac = SPspecs.camera_specs.magnification/(1e3*SPspecs.camera_specs.pixel_size);
@@ -84,9 +87,7 @@ for ichan = 1:nchan
     
     % skip zoom_specs and align_specs
     d = dilatepts(finaldata.data{ichan}, fac);
-    adata.alldata_track = new_to_old(d);
-    [adata.alldata_track.rawdata] = adata.alldata_track.data;
-    adata.alldata_track = rmfield(adata.alldata_track, 'data');
+    adata.alldata_track = new_to_old(d,'rawdata', true, false);
     
     [d.tmp] = d.y;
     [d.y] = d.x;
