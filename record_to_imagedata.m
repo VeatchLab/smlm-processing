@@ -65,6 +65,9 @@ for ichan = 1:nchan
     id(ichan).image_process_specs = oldspecs;
     
     id(ichan).processed_image_data = new_to_old(fits.data{ichan});
+    for imov = 1:numel(id(ichan).processed_image_data)
+        id(ichan).processed_image_data(imov).raw_filename = SPspecs.movie_fnames{imov};
+    end
     
     % skip cull_specs
     % final_image_specs
