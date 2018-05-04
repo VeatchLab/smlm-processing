@@ -20,6 +20,8 @@ for imov = 1:nmovies
     olddata(imov).(data_fieldname) = newdata(imov,:);
     for iframe = 1:nframes
         n = numel(newdata(imov,iframe).x);
+        olddata(imov).(data_fieldname)(iframe).tI = newdata(imov, iframe).I;
+        olddata(imov).(data_fieldname)(iframe).AR = ones(size(newdata(imov, iframe).I));
         if transposex_flag
             olddata(imov).(data_fieldname)(iframe).x = reshape(newdata(imov,iframe).y, n,1);
             olddata(imov).(data_fieldname)(iframe).y = reshape(newdata(imov,iframe).x, n,1);

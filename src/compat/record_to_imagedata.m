@@ -1,4 +1,8 @@
-function record_to_imagedata(record_fname)
+function record_to_imagedata(record_fname, group)
+
+if nargin < 2
+    group = false;
+end
 
 record = load(record_fname);
 finaldata = load(record.final_fname);
@@ -104,12 +108,14 @@ for ichan = 1:nchan
     d = rmfield(d, 'tmp');
     adata.alldata_raw = mergeacross(d);
     
-    fprintf('Starting grouping on channel %d\n', ichan);
-    tic;
-    grouped = groupSTORM(d, .5);
-    disp(toc);
-    adata.alldata = mergeacross(grouped);
-    
+    if group
+        fprintf('Starting grouping on channel %d\n', ichan);
+        tic;
+        grouped = groupSTORM(d, .5);
+        disp(toc);
+        adata.alldata = mergeacross(grouped);
+    end
+        
     adata.xshifts = record.drift_info.xshift;
     adata.yshifts = record.drift_info.yshift;
     id(ichan).alignment_data = adata;
