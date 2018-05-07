@@ -272,7 +272,9 @@ end
 function cam_name_edit_Callback(hObject, eventdata, handles)
 val = get(hObject, 'String');
 if get(handles.lock_cameras_checkbox, 'Value')
-    [handles.specs(:).camera_specs.name] = deal(val);
+    cs = handles.specs(handles.channel).camera_specs;
+    cs.name = val;
+    [handles.specs(:).camera_specs] = deal(cs);
 else
     handles.specs(handles.channel).camera_specs.name = val;
 end
@@ -280,7 +282,9 @@ guidata(hObject, handles);
 function psize_edit_Callback(hObject, eventdata, handles)
 val = str2num(get(hObject, 'String'));
 if get(handles.lock_cameras_checkbox, 'Value')
-    [handles.specs(:).camera_specs.pixel_size] = deal(val);
+    cs = handles.specs(handles.channel).camera_specs;
+    cs.pixel_size = val;
+    [handles.specs(:).camera_specs] = deal(cs);
 else
     handles.specs(handles.channel).camera_specs.pixel_size = val;
 end
@@ -288,7 +292,9 @@ guidata(hObject, handles);
 function mag_edit_Callback(hObject, eventdata, handles)
 val = str2num(get(hObject, 'String'));
 if get(handles.lock_cameras_checkbox, 'Value')
-    [handles.specs(:).camera_specs.magnification] = deal(val);
+    cs = handles.specs(handles.channel).camera_specs;
+    cs.magnification = val;
+    [handles.specs(:).camera_specs] = deal(cs);
 else
     handles.specs(handles.channel).camera_specs.magnification = val;
 end
@@ -297,7 +303,9 @@ function cam_type_menu_Callback(hObject, eventdata, handles)
 vals = get(hObject, 'String');
 val = vals{get(hObject, 'Value')};
 if get(handles.lock_cameras_checkbox, 'Value')
-    [handles.specs(:).camera_specs.type] = deal(val);
+    cs = handles.specs(handles.channel).camera_specs;
+    cs.type = val;
+    [handles.specs(:).camera_specs] = deal(cs);
 else
     handles.specs(handles.channel).camera_specs.type = val;
 end
