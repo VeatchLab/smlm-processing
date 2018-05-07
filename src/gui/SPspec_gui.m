@@ -22,7 +22,7 @@ function varargout = SPspec_gui(varargin)
 
 % Edit the above text to modify the response to help SPspec_gui
 
-% Last Modified by GUIDE v2.5 01-May-2018 18:02:56
+% Last Modified by GUIDE v2.5 07-May-2018 17:23:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -60,6 +60,9 @@ chan_strs = arrayfun(@(n) ['Channel ' num2str(n)], 1:handles.nchan,...
 set(handles.channel_menu, 'String', chan_strs);
 set(handles.channel_menu, 'Value', handles.channel);
 
+handles.cameras = {'emccd', 'scmos'};
+set(handles.cam_type_menu, 'String', handles.cameras);
+
 handles = init_filenames(handles);
 
 update_fields_from_specs(handles, handles.channel);
@@ -95,6 +98,19 @@ set(handles.cdim3_edit, 'String', num2str(s.channel_dims(3)));
 set(handles.cdim4_edit, 'String', num2str(s.channel_dims(4)));
 set(handles.thresh_edit, 'String', num2str(s.thresh));
 
+set(handles.cam_name_edit, 'String', s.camera_specs.name);
+vals = get(handles.cam_type_menu, 'String');
+val = find(vals, s.camera_specs.type);
+set(handles.cam_type_menu, 'Value', val);
+set(handles.mag_edit, 'String', num2str(s.camera_specs.magnification));
+set(handles.psize_edit, 'String', num2str(s.camera_specs.pixel_size));
+
+%TODO: figure out if different channels have same camera
+set(handles.lock_cameras_checkbox, 'Value', 0);
+
+set(handles.PSFwidth_edit, 'String', num2str(s.PSFwidth));
+set(handles.r_centroid_edit, 'String', num2str(s.r_centroid));
+set(handles.r_neighbor_edit, 'String', num2str(s.r_neighbor));
 
 function setup_table(handles)
 
@@ -234,3 +250,54 @@ function cdim4_edit_Callback(hObject, eventdata, handles)
 handles.specs(handles.channel).channel_dims(4) = ...
     round(str2num(get(hObject, 'String')));
 guidata(hObject, handles);
+
+function PSFwidth_edit_Callback(hObject, eventdata, handles)
+val = str2num(get(hObject, 'String'));
+handles.specs(handles.channel).PSFwidth = val;
+guidata(hObject, handles);
+function r_centroid_edit_Callback(hObject, eventdata, handles)
+val = str2num(get(hObject, 'String'));
+handles.specs(handles.channel).r_centroid = val;
+guidata(hObject, handles);
+function r_neighbor_edit_Callback(hObject, eventdata, handles)
+val = str2num(get(hObject, 'String'));
+handles.specs(handles.channel).r_neighbor = val;
+guidata(hObject, handles);
+
+function lock_cameras_checkbox_Callback(hObject, eventdata, handles)
+if get(hObject, 'Value')
+    [handles.specs.camera_specs] = deal(handles.specs(handles.channel).camera_specs);
+end
+
+function cam_name_edit_Callback(hObject, eventdata, handles)
+val = get(hObject, 'String');
+if get(handles.lock_cameras_checkbox, 'Value')
+    [handles.specs(:).camera_specs.name] = deal(val);
+else
+    handles.specs(handles.channel).camera_specs.name = val;
+end
+guidata(hObject, handles);
+function psize_edit_Callback(hObject, eventdata, handles)
+val = str2num(get(hObject, 'String'));
+if get(handles.lock_cameras_checkbox, 'Value')
+    [handles.specs(:).camera_specs.pixel_size] = deal(val);
+else
+    handles.specs(handles.channel).camera_specs.pixel_size = val;
+end
+guidata(hObject, handles);
+function mag_edit_Callback(hObject, eventdata, handles)
+val = str2num(get(hObject, 'String'));
+if get(handles.lock_cameras_checkbox, 'Value')
+    [handles.specs(:).camera_specs.magnification] = deal(val);
+else
+    handles.specs(handles.channel).camera_specs.magnification = val;
+end
+guidata(hObject, handles);
+function cam_type_menu_Callback(hObject, eventdata, handles)
+vals = get(hObject, 'String');
+val = vals{get(hObject, 'Value')};
+if get(handles.lock_cameras_checkbox, 'Value')
+    [handles.specs(:).camera_specs.type] = deal(val);
+else
+    handles.specs(handles.channel).camera_specs.type = val;
+end
