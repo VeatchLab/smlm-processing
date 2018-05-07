@@ -100,7 +100,7 @@ set(handles.thresh_edit, 'String', num2str(s.thresh));
 
 set(handles.cam_name_edit, 'String', s.camera_specs.name);
 vals = get(handles.cam_type_menu, 'String');
-val = find(vals, s.camera_specs.type);
+val = find(strcmp(vals, s.camera_specs.type));
 set(handles.cam_type_menu, 'Value', val);
 set(handles.mag_edit, 'String', num2str(s.camera_specs.magnification));
 set(handles.psize_edit, 'String', num2str(s.camera_specs.pixel_size));
