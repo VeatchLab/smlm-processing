@@ -144,10 +144,14 @@ if newdatarange % update image
     lastframe = round(str2double(get(handles.lastframe_edit, 'String')));
     %TODO: verify good ranges
     for i = 1:handles.nchannel
-        firstchunk = handles.datastruct.data{i}(firstmov, firstframe:end);
-        lastchunk = handles.datastruct.data{i}(lastmov, 1:lastframe);
-        otherstuff = handles.datastruct.data{i}((firstmov+1):(lastmov -1),:);
-        handles.data{i} = [firstchunk(:)', otherstuff(:)', lastchunk(:)'];
+        if firstmov == lastmov
+            handles.data{i} = [handles.datastruct.data{i}(firstmov, firstframe:lastframe)];
+        else
+            firstchunk = handles.datastruct.data{i}(firstmov, firstframe:end);
+            lastchunk = handles.datastruct.data{i}(lastmov, 1:lastframe);
+            otherstuff = handles.datastruct.data{i}((firstmov+1):(lastmov -1),:);
+            handles.data{i} = [firstchunk(:)', otherstuff(:)', lastchunk(:)'];
+        end
     end
     
     handles.istruct.data.data = handles.data;
