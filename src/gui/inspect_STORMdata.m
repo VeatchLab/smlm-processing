@@ -97,15 +97,57 @@ npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
 histogram(handles.npts1_axes, npts1(:));
 histogram(handles.npts2_axes, npts2(:));
 
-% set up axes for 
-
 guidata(hObject, handles);
 
 
 function varargout = inspect_STORMdata_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
 
+
 % My functions
+function [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles)
+firstmov = round(str2double(get(handles.firstmovie_edit, 'String')));
+firstframe = round(str2double(get(handles.firstframe_edit, 'String')));
+lastmov = round(str2double(get(handles.lastmovie_edit, 'String')));
+lastframe = round(str2double(get(handles.lastframe_edit, 'String')));
+
+if firstmov < 1
+    firstmov = 1;
+elseif firstmov > handles.maxmov
+    firstmov = handles.maxmov;
+end
+
+if lastmov < 1
+    lastmov = 1;
+elseif lastmov > handles.maxmov
+    lastmov = handles.maxmov;
+end
+
+if firstframe < 1
+    firstframe = 1;
+elseif firstframe > handles.maxframe
+    firstframe = handles.maxframe
+end
+
+if lastframe < 1
+    lastframe = 1;
+elseif lastframe > handles.maxframe
+    lastframe = handles.maxframe;
+end
+
+if firstmov > lastmov
+    lastmov = firstmov;
+end
+
+if firstframe > lastframe
+    lastframe = firstframe;
+end
+
+set(handles.firstmovie_edit, 'String', firstmov)
+set(handles.lastmovie_edit, 'String', lastmov)
+set(handles.firstframe_edit, 'String', firstframe)
+set(handles.lastframe_edit, 'String', lastframe)
+
 function reconstruct_Callback(hObject, ~, handles) %#ok<*DEFNU>
 newdatarange = false;
 newistruct = false;
@@ -138,11 +180,7 @@ switch hObject.Tag
 end
 
 if newdatarange % update image
-    firstmov = round(str2double(get(handles.firstmovie_edit, 'String')));
-    firstframe = round(str2double(get(handles.firstframe_edit, 'String')));
-    lastmov = round(str2double(get(handles.lastmovie_edit, 'String')));
-    lastframe = round(str2double(get(handles.lastframe_edit, 'String')));
-    %TODO: verify good ranges
+    [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles);
     for i = 1:handles.nchannel
         if firstmov == lastmov
             handles.data{i} = [handles.datastruct.data{i}(firstmov, firstframe:lastframe)];
