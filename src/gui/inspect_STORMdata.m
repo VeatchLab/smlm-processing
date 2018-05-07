@@ -22,7 +22,7 @@ function varargout = inspect_STORMdata(varargin)
 
 % Edit the above text to modify the response to help inspect_STORMdata
 
-% Last Modified by GUIDE v2.5 26-Apr-2018 09:58:29
+% Last Modified by GUIDE v2.5 07-May-2018 15:36:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -76,6 +76,12 @@ handles.Itoshow = handles.Merge;
 
 set(handles.cmax1_edit, 'String', num2str(handles.istruct.cmax(1)));
 set(handles.cmax2_edit, 'String', num2str(handles.istruct.cmax(2)));
+
+set(handles.color1_edit, 'String', handles.istruct.color(1));
+set(handles.color2_edit, 'String', handles.istruct.color(2));
+
+set(handles.psf1_edit, 'String', num2str(handles.istruct.sigmablur(1)));
+set(handles.psf2_edit, 'String', num2str(handles.istruct.sigmablur(2)));
 
 % set up axes for reconstruction
 r_axes = axes('Parent', handles.image_panel, 'Units', 'Normalized',...
@@ -174,6 +180,26 @@ switch hObject.Tag
         redrawimage = true;
         newcmax = str2double(get(hObject, 'String'));
         handles.istruct.cmax(2) = newcmax;
+    case 'color1_edit'
+        newistruct = true;
+        redrawimage = true;
+        newcolor = get(hObject, 'String');
+        handles.istruct.color(1) = newcolor;
+    case 'color2_edit'
+        newistruct = true;
+        redrawimage = true;
+        newcolor = get(hObject, 'String');
+        handles.istruct.color(1) = newcolor;
+    case 'psf1_edit'
+        newistruct = true;
+        redrawimage = true;
+        newpsf = str2double(get(hObject, 'String'));
+        handles.istruct.sigmablur(1) = newpsf;
+    case 'psf2_edit'
+        newistruct = true;
+        redrawimage = true;
+        newpsf = str2double(get(hObject, 'String'));
+        handles.istruct.sigmablur(2) = newpsf;
     case {'overlay_ch1_checkbox', 'overlay_ch2_checkbox', 'color_by_menu'}
         newptsdata = true;
         redrawpoints = true;
