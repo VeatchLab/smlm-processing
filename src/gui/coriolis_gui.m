@@ -187,7 +187,6 @@ for i = 1:numel(fnames)
 end
 guidata(handles.figure1, handles);
 
-%TODO: skip if data are the same age as the file
 %TODO: generalize, via a savedataset function (culled is done right, the
 %others aren't quite)
 function save_all(handles)
@@ -467,10 +466,6 @@ set(handles.culled_stat, 'String', 'Culling ...');
 drawnow;
 
 dilated = getdataset(handles, 'dilated');
-
-%culled.data = cell(1,2);
-%culled.data{1} = cullSTORM(dilated.data{1}, cs{1});
-%culled.data{2} = cullSTORM(dilated.data{2}, cs{2});
 
 % this should work independent of number of channels
 [culled.data, handles.record.cullinds] = ...

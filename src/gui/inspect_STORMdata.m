@@ -53,6 +53,14 @@ if isempty(handles.datastruct) || ~isfield(handles.datastruct, 'data')
     error('No data provided, or format doesn''t check out');
 end
 
+if numel(varargin) > 1
+    handles.cullinds = varargin{2};
+    handles.culling_enabled = true;
+else
+    handles.cullinds = [];
+    handles.culling_enabled = false;
+end
+
 handles.data = handles.datastruct.data;
 handles.nchannel = numel(handles.data);
 
@@ -66,7 +74,7 @@ set(handles.firstmovie_edit, 'String', '1');
 set(handles.lastmovie_edit, 'String', num2str(handles.maxmov));
 
 fields = fieldnames(handles.data{1});
-fields = {'solid', fields{:}};
+fields = vertcat({'solid'}, fields(:));
 set(handles.color_by_menu, 'String', fields);
 
 % get preliminary imagestruct and reconstruction
@@ -85,12 +93,12 @@ set(handles.psf2_edit, 'String', num2str(handles.istruct.sigmablur(2)));
 
 % set up axes for reconstruction
 r_axes = axes('Parent', handles.image_panel, 'Units', 'Normalized',...
-                'Position', [0.1, 0.1, .8, .8]);
-axis(r_axes, 'equal');
+                'Position', [0.02, 0.02, .96, .96]);
 handles.r_axes = r_axes;
 handles.im = imshow(handles.Itoshow, handles.istruct.imageref, ...
-                'Parent', r_axes);
+                'Parent', r_axes, 'Border', 'tight');
 zoom(r_axes, 'on');
+axis(r_axes, 'equal','off');
 handles.pts = [];
 handles.cbar = [];
 
@@ -112,10 +120,10 @@ varargout{1} = handles.output;
 
 % My functions
 function [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles)
-firstmov = round(str2double(get(handles.firstmovie_edit, 'String')));
-firstframe = round(str2double(get(handles.firstframe_edit, 'String')));
-lastmov = round(str2double(get(handles.lastmovie_edit, 'String')));
-lastframe = round(str2double(get(handles.lastframe_edit, 'String')));
+firstmov = get(handles.firstmovie_edit, 'String');
+lastmov =  get(handles.lastmovie_edit, 'String');
+firstframe = get(handles.firstframe_edit, 'String');
+lastframe = get(handles.lastframe_edit, 'String');
 
 if firstmov < 1
     firstmov = 1;
@@ -132,7 +140,7 @@ end
 if firstframe < 1
     firstframe = 1;
 elseif firstframe > handles.maxframe
-    firstframe = handles.maxframe
+    firstframe = handles.maxframe;
 end
 
 if lastframe < 1
@@ -209,7 +217,7 @@ if newdatarange % update image
     [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles);
     for i = 1:handles.nchannel
         if firstmov == lastmov
-            handles.data{i} = [handles.datastruct.data{i}(firstmov, firstframe:lastframe)];
+            handles.data{i} = handles.datastruct.data{i}(firstmov, firstframe:lastframe);
         else
             firstchunk = handles.datastruct.data{i}(firstmov, firstframe:end);
             lastchunk = handles.datastruct.data{i}(lastmov, 1:lastframe);
@@ -274,7 +282,7 @@ if redrawimage
 
     if isempty(handles.im)
         handles.im = imshow(handles.Itoshow, handles.istruct.imageref, ...
-                    'Parent', r_axes);
+                    'Parent', r_axes, 'Border', 'tight');
     else
         set(handles.im, 'CData', handles.Itoshow)
     end
@@ -301,11 +309,8 @@ if redrawpoints
         colorbar(handles.cbar, 'off');
         handles.cbar = [];
     end
-        
 end
-
 guidata(hObject, handles);
 
-function save_button_Callback(hObject, ~, handles)
-
+function save_button_Callback(~, ~, handles)
 imwrite(handles.Itoshow, 'img.tif');
