@@ -22,7 +22,7 @@ function varargout = SPspec_gui(varargin)
 
 % Edit the above text to modify the response to help SPspec_gui
 
-% Last Modified by GUIDE v2.5 07-May-2018 17:23:35
+% Last Modified by GUIDE v2.5 08-May-2018 12:37:22
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -96,7 +96,14 @@ set(handles.cdim1_edit, 'String', num2str(s.channel_dims(1)));
 set(handles.cdim2_edit, 'String', num2str(s.channel_dims(2)));
 set(handles.cdim3_edit, 'String', num2str(s.channel_dims(3)));
 set(handles.cdim4_edit, 'String', num2str(s.channel_dims(4)));
+
 set(handles.thresh_edit, 'String', num2str(s.thresh));
+bg_types = {'median', 'mean', 'selective', 'none'};
+bg_methods = {'standard', 'true', 'unif'};
+set(handles.bg_type_menu, 'String', bg_types);
+set(handles.bg_type_menu, 'Value', find(strcmp(bg_types, s.bg_type)));
+set(handles.bg_method_menu, 'String', bg_methods);
+set(handles.bg_method_menu, 'Value', find(strcmp(bg_methods, s.bg_method)));
 
 set(handles.cam_name_edit, 'String', s.camera_specs.name);
 vals = get(handles.cam_type_menu, 'String');
@@ -105,12 +112,24 @@ set(handles.cam_type_menu, 'Value', val);
 set(handles.mag_edit, 'String', num2str(s.camera_specs.magnification));
 set(handles.psize_edit, 'String', num2str(s.camera_specs.pixel_size));
 
-%TODO: figure out if different channels have same camera
-set(handles.lock_cameras_checkbox, 'Value', 0);
+cspec_eq = true;
+cspec = specs(handles.channel).camera_specs;
+for i = 1:handles.nchan
+    cspec_eq = cspec_eq && isequal(specs(i).camera_specs, cspec);
+end
+
+if cspec_eq
+    set(handles.lock_cameras_checkbox, 'Value', 1);
+else
+    set(handles.lock_cameras_checkbox, 'Value', 0);
+end
 
 set(handles.PSFwidth_edit, 'String', num2str(s.PSFwidth));
 set(handles.r_centroid_edit, 'String', num2str(s.r_centroid));
 set(handles.r_neighbor_edit, 'String', num2str(s.r_neighbor));
+
+set(handles.nmax_edit, 'String', num2str(s.nmax/1000));
+set(handles.mle_iters_edit, 'String', num2str(s.mle_iters));
 
 function setup_table(handles)
 
@@ -164,7 +183,7 @@ handles.whichchannels = whichchannels;
 
 %%%%%%%%%%%%%%%%%%%%%%%%% Callbacks
 % --- Executes when user attempts to close figure1.
-function figure1_CloseRequestFcn(hObject, ~, handles)
+function figure1_CloseRequestFcn(~, ~, handles) %#ok<*DEFNU>
 uiresume(handles.figure1);
 
 if ~handles.to_return
@@ -180,7 +199,7 @@ if ~handles.to_return
     delete(handles.figure1)
 end
 
-function channel_menu_Callback(hObject, eventdata, handles)
+function channel_menu_Callback(hObject, ~, handles)
 handles.channel = get(hObject, 'Value');
 update_fields_from_specs(handles, handles.channel);
 guidata(hObject, handles);
@@ -222,7 +241,7 @@ handles.selectedrows = [];
 guidata(hObject, update_fnames_from_table(handles));
 
 function thresh_edit_Callback(hObject, ~, handles)
-val = str2num(get(hObject, 'String'));
+val = str2double(get(hObject, 'String'));
 set(hObject, 'String', num2str(val));
 handles.specs(handles.channel).thresh = val;
 guidata(hObject, handles);
@@ -234,42 +253,42 @@ guidata(hObject,handles);
 function thresh_diag_button_Callback(~, ~, handles)
 threshold_diagnostics(handles.all_fnames);
 
-function cdim1_edit_Callback(hObject, eventdata, handles)
+function cdim1_edit_Callback(hObject, ~, handles)
 handles.specs(handles.channel).channel_dims(1) = ...
-    round(str2num(get(hObject, 'String')));
+    round(str2double(get(hObject, 'String')));
 guidata(hObject, handles);
-function cdim2_edit_Callback(hObject, eventdata, handles)
+function cdim2_edit_Callback(hObject, ~, handles)
 handles.specs(handles.channel).channel_dims(2) = ...
-    round(str2num(get(hObject, 'String')));
+    round(str2double(get(hObject, 'String')));
 guidata(hObject, handles);
-function cdim3_edit_Callback(hObject, eventdata, handles)
+function cdim3_edit_Callback(hObject, ~, handles)
 handles.specs(handles.channel).channel_dims(3) = ...
-    round(str2num(get(hObject, 'String')));
+    round(str2double(get(hObject, 'String')));
 guidata(hObject, handles);
-function cdim4_edit_Callback(hObject, eventdata, handles)
+function cdim4_edit_Callback(hObject, ~, handles)
 handles.specs(handles.channel).channel_dims(4) = ...
-    round(str2num(get(hObject, 'String')));
+    round(str2double(get(hObject, 'String')));
 guidata(hObject, handles);
 
-function PSFwidth_edit_Callback(hObject, eventdata, handles)
-val = str2num(get(hObject, 'String'));
+function PSFwidth_edit_Callback(hObject, ~, handles)
+val = str2double(get(hObject, 'String'));
 handles.specs(handles.channel).PSFwidth = val;
 guidata(hObject, handles);
-function r_centroid_edit_Callback(hObject, eventdata, handles)
-val = str2num(get(hObject, 'String'));
+function r_centroid_edit_Callback(hObject, ~, handles)
+val = str2double(get(hObject, 'String'));
 handles.specs(handles.channel).r_centroid = val;
 guidata(hObject, handles);
-function r_neighbor_edit_Callback(hObject, eventdata, handles)
-val = str2num(get(hObject, 'String'));
+function r_neighbor_edit_Callback(hObject, ~, handles)
+val = str2double(get(hObject, 'String'));
 handles.specs(handles.channel).r_neighbor = val;
 guidata(hObject, handles);
 
-function lock_cameras_checkbox_Callback(hObject, eventdata, handles)
+function lock_cameras_checkbox_Callback(hObject, ~, handles)
 if get(hObject, 'Value')
     [handles.specs.camera_specs] = deal(handles.specs(handles.channel).camera_specs);
 end
 
-function cam_name_edit_Callback(hObject, eventdata, handles)
+function cam_name_edit_Callback(hObject, ~, handles)
 val = get(hObject, 'String');
 if get(handles.lock_cameras_checkbox, 'Value')
     cs = handles.specs(handles.channel).camera_specs;
@@ -279,8 +298,8 @@ else
     handles.specs(handles.channel).camera_specs.name = val;
 end
 guidata(hObject, handles);
-function psize_edit_Callback(hObject, eventdata, handles)
-val = str2num(get(hObject, 'String'));
+function psize_edit_Callback(hObject, ~, handles)
+val = str2double(get(hObject, 'String'));
 if get(handles.lock_cameras_checkbox, 'Value')
     cs = handles.specs(handles.channel).camera_specs;
     cs.pixel_size = val;
@@ -289,8 +308,8 @@ else
     handles.specs(handles.channel).camera_specs.pixel_size = val;
 end
 guidata(hObject, handles);
-function mag_edit_Callback(hObject, eventdata, handles)
-val = str2num(get(hObject, 'String'));
+function mag_edit_Callback(hObject, ~, handles)
+val = str2double(get(hObject, 'String'));
 if get(handles.lock_cameras_checkbox, 'Value')
     cs = handles.specs(handles.channel).camera_specs;
     cs.magnification = val;
@@ -299,7 +318,7 @@ else
     handles.specs(handles.channel).camera_specs.magnification = val;
 end
 guidata(hObject, handles);
-function cam_type_menu_Callback(hObject, eventdata, handles)
+function cam_type_menu_Callback(hObject, ~, handles)
 vals = get(hObject, 'String');
 val = vals{get(hObject, 'Value')};
 if get(handles.lock_cameras_checkbox, 'Value')
@@ -309,3 +328,30 @@ if get(handles.lock_cameras_checkbox, 'Value')
 else
     handles.specs(handles.channel).camera_specs.type = val;
 end
+
+function bg_type_menu_Callback(hObject, ~, handles)
+vals = get(hObject, 'String');
+val = vals(get(hObject, 'Value'));
+handles.specs(handles.channel).bg_type = val;
+guidata(hObject, handles);
+function bg_method_menu_Callback(hObject, ~, handles)
+vals = get(hObject, 'String');
+val = vals(get(hObject, 'Value'));
+handles.specs(handles.channel).bg_method = val;
+guidata(hObject, handles);
+
+function fitsigma_checkbox_Callback(hObject, ~, handles)
+val = get(hObject, 'Value');
+handles.specs(handles.channel).fitsigma = val;
+guidata(hObject, handles);
+
+function mle_iters_edit_Callback(hObject, ~, handles)
+val = round(str2double(get(hObject, 'String')));
+set(hObject, 'String', num2str(val));
+handles.specs(handles.channel).mle_iters = val;
+guidata(hObject,handles);
+function nmax_edit_Callback(hObject, ~, handles)
+val = round(str2double(get(hObject, 'String'))*1000);
+set(hObject, 'String', num2str(val/1000));
+handles.specs(handles.channel).nmax = val;
+guidata(hObject,handles);
