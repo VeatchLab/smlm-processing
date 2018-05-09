@@ -1,13 +1,13 @@
-function record =  SP_record_default(nchan)
+function record =  SP_record_default(nchan, varargin)
 
 if nargin < 1
     nchan = 2; % dualview by default
 end
 
 if nchan == 1
-    record.SPspecs = default_specs_singlview();
+    record.SPspecs = default_specs_singlview(varargin{:});
 elseif nchan == 2
-    record.SPspecs = default_specs_dualview();
+    record.SPspecs = default_specs_dualview(varargin{:});
 end
 record.cullspecs = repmat({cull_defaults()}, 1, nchan);
 record.dv_transform_fname = '';
