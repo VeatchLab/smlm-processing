@@ -12,7 +12,7 @@ fits.date = datetime;
 fits.produced_by = 'STORMprocess';
 fits.units = 'px';
 
-save(record.fits_fname, 'fits');
+save(record.fits_fname, '-struct', 'fits');
 
 record.metadata = metadata;
 save record.mat -struct record

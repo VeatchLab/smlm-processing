@@ -9,16 +9,36 @@ while true
 
     if isempty(newdirs)
         disp('No new dirs to process');
-        pause(60);
+        pause(600);
     end
     for i = 1:numel(newdirs)
         if ~isempty(regexp(newdirs{i}, 'cell'));
             disp(['fitting to do in ' newdirs{i}]);
             cd(newdirs{i});
+            files = dir();
+            while true
+                pause(60);
+                if isequal(files, dir())
+                    break;
+                else
+                    files = dir();
+                    disp('new files in last minute -- waiting to see if there are more');
+                end
+            end
             run_batch_fitting(2);
         elseif ~isempty(regexp(newdirs{i}, 'beads'))
             disp(['fiducials to do in ' newdirs{i}]);
             cd(newdirs{i});
+            files = dir();
+            while true
+                pause(60);
+                if isequal(files, dir())
+                    break;
+                else
+                    files = dir();
+                    disp('new files in last minute -- waiting to see if there are more');
+                end
+            end
             do_fidfind();
         end
         cd(here);
