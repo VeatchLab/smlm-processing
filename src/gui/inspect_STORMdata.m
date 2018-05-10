@@ -120,10 +120,10 @@ varargout{1} = handles.output;
 
 % My functions
 function [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles)
-firstmov = get(handles.firstmovie_edit, 'String');
-lastmov =  get(handles.lastmovie_edit, 'String');
-firstframe = get(handles.firstframe_edit, 'String');
-lastframe = get(handles.lastframe_edit, 'String');
+firstmov = round(str2double(get(handles.firstmovie_edit, 'String')));
+lastmov =  round(str2double(get(handles.lastmovie_edit, 'String')));
+firstframe = round(str2double(get(handles.firstframe_edit, 'String')));
+lastframe = round(str2double(get(handles.lastframe_edit, 'String')));
 
 if firstmov < 1
     firstmov = 1;
