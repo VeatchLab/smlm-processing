@@ -197,7 +197,7 @@ switch hObject.Tag
         newistruct = true;
         redrawimage = true;
         newcolor = get(hObject, 'String');
-        handles.istruct.color(1) = newcolor;
+        handles.istruct.color(2) = newcolor;
     case 'psf1_edit'
         newistruct = true;
         redrawimage = true;
