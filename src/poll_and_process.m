@@ -1,3 +1,4 @@
+function poll_and_process(varargin)
 olddirs = {};
 here = cd;
 while true
@@ -12,7 +13,7 @@ while true
         pause(600);
     end
     for i = 1:numel(newdirs)
-        if ~isempty(regexp(newdirs{i}, 'cell'));
+        if ~isempty(regexp(newdirs{i}, 'cell', 'once'))
             disp(['fitting to do in ' newdirs{i}]);
             cd(newdirs{i});
             files = dir();
@@ -25,8 +26,8 @@ while true
                     disp('new files in last minute -- waiting to see if there are more');
                 end
             end
-            run_batch_fitting(2);
-        elseif ~isempty(regexp(newdirs{i}, 'beads'))
+            run_batch_fitting(2, varargin{:});
+        elseif ~isempty(regexp(newdirs{i}, 'beads', 'once'))
             disp(['fiducials to do in ' newdirs{i}]);
             cd(newdirs{i});
             files = dir();
