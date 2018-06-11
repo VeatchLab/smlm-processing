@@ -97,7 +97,11 @@ r_axes = axes('Parent', handles.image_panel, 'Units', 'Normalized',...
 handles.r_axes = r_axes;
 handles.im = imshow(handles.Itoshow, handles.istruct.imageref, ...
                 'Parent', r_axes, 'Border', 'tight');
-zoom(r_axes, 'on');
+h = zoom(r_axes);
+h.Enable = 'on';
+h.ActionPreCallback = @(obj, evd) pre_zoom_callback(evd.Axes);
+h.ActionPostCallback = @(obj, evd) post_zoom_callback(evd.Axes);
+post_zoom_callback(r_axes);
 axis(r_axes, 'equal','off');
 handles.pts = [];
 handles.cbar = [];
@@ -113,12 +117,49 @@ histogram(handles.npts2_axes, npts2(:));
 
 guidata(hObject, handles);
 
-
 function varargout = inspect_STORMdata_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
 
 
 % My functions
+function pre_zoom_callback(ax) % takes the axes of the zoom
+c = ax.Children;
+for i = 1:numel(c)
+    switch class(c(i))
+        case {'matlab.graphics.primitive.Patch', 'matlab.graphics.primitive.Text'}
+            delete(c(i));
+    end
+end
+
+function post_zoom_callback(ax)
+newxlim = ax.XLim;
+newylim = ax.YLim;
+newlim = max(diff(newxlim), diff(newylim));
+newscalebarlen = round(newlim/10, 1, 'significant');
+newscalebarmag = 10.^(floor(log10(newscalebarlen)));
+if (newscalebarlen/newscalebarmag > 6)
+    newscalebarmag = 10*newscalebarmag;
+    newscalebarlen = newscalebarmag;
+elseif (newscalebarlen/newscalebarmag > 2)
+    newscalebarlen = newscalebarmag*5;
+end
+
+if newscalebarmag > 500 %nm
+    labeltext = [num2str(newscalebarlen / 1000), ' {\mu}m'];
+else
+    labeltext = [num2str(newscalebarlen), ' nm'];
+end
+
+left = newxlim(1) + newlim/50;
+right = left + newscalebarlen;
+top = newylim(1) + newlim/50;
+bottom = top + newlim/50;
+
+patch(ax, [left, right, right, left], [bottom, bottom, top, top], 'w');
+text(ax, left, (bottom + top)/2, labeltext, 'Interpreter', 'tex');
+
+function resize_scalebar(bar, size, text, label)
+
 function [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles)
 firstmov = round(str2double(get(handles.firstmovie_edit, 'String')));
 lastmov =  round(str2double(get(handles.lastmovie_edit, 'String')));
