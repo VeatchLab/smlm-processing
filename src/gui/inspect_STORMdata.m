@@ -122,6 +122,7 @@ varargout{1} = handles.output;
 
 
 % My functions
+% Callback to delete old scalebar before a zoom event
 function pre_zoom_callback(ax) % takes the axes of the zoom
 c = ax.Children;
 for i = 1:numel(c)
@@ -131,6 +132,7 @@ for i = 1:numel(c)
     end
 end
 
+% Callback to draw new scalebar after zoom event
 function post_zoom_callback(ax)
 newxlim = ax.XLim;
 newylim = ax.YLim;
@@ -157,8 +159,6 @@ bottom = top + newlim/50;
 
 patch(ax, [left, right, right, left], [bottom, bottom, top, top], 'w');
 text(ax, left, (bottom + top)/2, labeltext, 'Interpreter', 'tex');
-
-function resize_scalebar(bar, size, text, label)
 
 function [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles)
 firstmov = round(str2double(get(handles.firstmovie_edit, 'String')));
