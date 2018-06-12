@@ -74,6 +74,7 @@ set(handles.firstmovie_edit, 'String', '1');
 set(handles.lastmovie_edit, 'String', num2str(handles.maxmov));
 
 fields = fieldnames(handles.data{1});
+fields = vertcat({'time'}, fields(:));
 fields = vertcat({'solid'}, fields(:));
 set(handles.color_by_menu, 'String', fields);
 
@@ -277,26 +278,39 @@ if newptsdata % update which points are here
     c_ind = get(handles.color_by_menu, 'Value');
     color_by = get(handles.color_by_menu, 'String');
     color_by = color_by{c_ind};
-    if strcmp(color_by, 'solid')
-    	handles.c = 'red';
-        c_field = false;
-    else
-        c_field = true;
+    switch color_by
+        case 'solid'
+            handles.c = 'red';
+            c_field = false;
+            c_time = false;
+        case 'time'
+            c_time = true;
+            c_field = false;
+        otherwise
+            c_field = true;
+            c_time = false;
     end
     if get(handles.overlay_ch1_checkbox, 'Value')
-        handles.x = [handles.data{1}(:).x];
-        handles.y = [handles.data{1}(:).y];
-        if c_field
-            handles.c = [handles.data{1}(:).(color_by)];
-        end
+        d = handles.data{1}'; % transpose puts frames in right order for single-index
         set(handles.overlay_ch2_checkbox, 'Value', 0);
     elseif get(handles.overlay_ch2_checkbox, 'Value')
-        handles.x = [handles.data{2}(:).x];
-        handles.y = [handles.data{2}(:).y];
-        if c_field
-            handles.c = [handles.data{2}(:).(color_by)];
-        end
+        d = handles.data{2}'; % transpose puts frames in right order for single-index
         set(handles.overlay_ch1_checkbox, 'Value', 0);
+    else
+        d = struct('x', -1, 'y', -1, color_by, 0);
+    end
+    handles.x = [d(:).x];
+    handles.y = [d(:).y];
+    if c_field
+        handles.c = [d(:).(color_by)];
+    elseif c_time
+        handles.c = zeros(size(handles.x));
+        ndone = 0;
+        for i = 1:numel(d)
+            nnew = numel(d(i).x);
+            handles.c(ndone + (1:nnew)) = i;
+            ndone = ndone + nnew;
+        end
     end
 end
 
