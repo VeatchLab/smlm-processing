@@ -210,6 +210,7 @@ newistruct = false;
 newptsdata = false;
 redrawimage = false;
 redrawpoints = false;
+newptscolors = false;
 switch hObject.Tag
     case {'reconstruct_ch1_checkbox', 'reconstruct_ch2_checkbox'}
         % only change image
@@ -253,6 +254,10 @@ switch hObject.Tag
     case {'overlay_ch1_checkbox', 'overlay_ch2_checkbox', 'color_by_menu'}
         newptsdata = true;
         redrawpoints = true;
+    case {'pts_cmin_edit', 'pts_cmax_edit'}
+        newptscmin = str2double(get(handles.pts_cmin_edit, 'String'));
+        newptscmax = str2double(get(handles.pts_cmax_edit, 'String'));
+        newptscolors = true;
 end
 
 if newdatarange % update image
@@ -281,14 +286,20 @@ if newptsdata % update which points are here
     switch color_by
         case 'solid'
             handles.c = 'red';
+            set(handles.pts_cmin_edit, 'Enable', 'off');
+            set(handles.pts_cmax_edit, 'Enable', 'off');
             c_field = false;
             c_time = false;
         case 'time'
             c_time = true;
             c_field = false;
+            set(handles.pts_cmin_edit, 'Enable', 'on');
+            set(handles.pts_cmax_edit, 'Enable', 'on');
         otherwise
             c_field = true;
             c_time = false;
+            set(handles.pts_cmin_edit, 'Enable', 'on');
+            set(handles.pts_cmax_edit, 'Enable', 'on');
     end
     if get(handles.overlay_ch1_checkbox, 'Value')
         d = handles.data{1}'; % transpose puts frames in right order for single-index
@@ -365,6 +376,11 @@ if redrawpoints
         handles.cbar = [];
     end
 end
+
+if newptscolors && ~isempty(handles.pts)
+    caxis(handles.r_axes, [newptscmin, newptscmax]);
+end
+
 guidata(hObject, handles);
 
 function save_button_Callback(~, ~, handles)
