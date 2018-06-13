@@ -22,7 +22,7 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 13-Jun-2018 10:49:34
+% Last Modified by GUIDE v2.5 13-Jun-2018 15:22:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -133,6 +133,12 @@ else
     warning('I don''t know how to handle that number of channels, proceed at own risk');
 end
 
+% see if you can apply_shifts
+if isfield(record, 'drift_info') && ~isempty(record.drift_info)
+    set(handles.apply_drift_button, 'Enable', 'on');
+else
+    set(handles.apply_drift_button, 'Enable', 'off');
+end
 % enable/disable transform stuff depending on record.transform_channel
 tform_uielements_enable_disable(handles);
 
@@ -530,6 +536,9 @@ end
 
 [final.data{1}, drift_info] = compute_drift(culled.data{1}, timing, driftspecs);
 handles.record.drift_info = drift_info;
+
+set(handles.apply_drift_button, 'Enable', 'on');
+
 if handles.nchannels > 1
     [final.data{2}] = apply_shifts(culled.data{2}, drift_info);
 end
@@ -543,6 +552,38 @@ handles.final = final;
 
 guidata(hObject, handles);
 set(handles.final_stat, 'String', {'done', char(final.date)});
+
+function apply_drift_button_Callback(hObject, eventdata, handles)
+% check prereqs
+if ~isfield(handles.record, 'drift_info')
+    nods = 1;
+else
+    nods = 0;
+    drift_info = handles.record.drift_info;
+end
+
+if nods || isempty(drift_info)
+    error('drift correction: no preexisting drift correction, aborting');
+end
+
+if isempty(handles.culled)
+    error('drift correction: no culled data, aborting');
+end
+
+set(handles.final_stat, 'String', 'Applying Drift Correction ...');
+drawnow;
+
+culled = getdataset(handles, 'culled');
+final.data = cellfun(@(d) apply_shifts(d, drift_info), culled.data, 'UniformOutput', false);
+final.date = datetime;
+final.produced_by = 'compute_drift';
+final.units = 'nm';
+final.drift_info = drift_info;
+
+handles.final = final;
+guidata(hObject, handles);
+set(handles.final_stat, 'String', {'done', char(final.date)});
+
 
 function save_button_Callback(~, ~, handles)
 save_all(handles);
@@ -629,3 +670,4 @@ else
 end
 tform_uielements_enable_disable(handles);
 guidata(hObject, handles);
+
