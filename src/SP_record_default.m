@@ -5,7 +5,7 @@ if nargin < 1
 end
 
 if nchan == 1
-    record.SPspecs = default_specs_singlview(varargin{:});
+    record.SPspecs = default_specs_singleview(varargin{:});
 elseif nchan == 2
     record.SPspecs = default_specs_dualview(varargin{:});
 end
