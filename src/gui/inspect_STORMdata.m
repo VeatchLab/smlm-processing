@@ -84,13 +84,11 @@ handles.istruct = imagestruct_default(handles.datastruct);
 handles.Itoshow = handles.Merge;
 
 set(handles.cmax1_edit, 'String', num2str(handles.istruct.cmax(1)));
-set(handles.cmax2_edit, 'String', num2str(handles.istruct.cmax(2)));
 
 set(handles.color1_edit, 'String', handles.istruct.color(1));
-set(handles.color2_edit, 'String', handles.istruct.color(2));
 
 set(handles.psf1_edit, 'String', num2str(handles.istruct.sigmablur(1)));
-set(handles.psf2_edit, 'String', num2str(handles.istruct.sigmablur(2)));
+
 
 % set up axes for reconstruction
 r_axes = axes('Parent', handles.image_panel, 'Units', 'Normalized',...
@@ -109,12 +107,25 @@ handles.cbar = [];
 
 handles.npts1_axes = axes('Parent', handles.nperframe_panel, 'Units', 'Normalized',...
                 'Position', [0.2, 0.1, .75, .35]);
-handles.npts2_axes = axes('Parent', handles.nperframe_panel, 'Units', 'Normalized',...
-                'Position', [0.2, 0.55, .75, .35]);
 npts1 = arrayfun(@(s) numel(s.x), handles.data{1});
-npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
 histogram(handles.npts1_axes, npts1(:));
-histogram(handles.npts2_axes, npts2(:));
+
+if handles.nchannel > 1
+    set(handles.psf2_edit, 'String', num2str(handles.istruct.sigmablur(2)));
+    set(handles.cmax2_edit, 'String', num2str(handles.istruct.cmax(2)));
+    set(handles.color2_edit, 'String', handles.istruct.color(2));
+    handles.npts2_axes = axes('Parent', handles.nperframe_panel, 'Units', 'Normalized',...
+                    'Position', [0.2, 0.55, .75, .35]);
+    npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
+    histogram(handles.npts2_axes, npts2(:));
+else
+    set(handles.reconstruct_ch2_checkbox, 'Value', false);
+    disable_uielements = {'psf2_edit', 'cmax2_edit', 'color2_edit',...
+        'reconstruct_ch2_checkbox', 'overlay_ch2_checkbox'};
+    for i = 1:numel(disable_uielements)
+        set(handles.(disable_uielements{i}), 'Enable', 'off');
+    end
+end
 
 guidata(hObject, handles);
 
@@ -260,6 +271,16 @@ switch hObject.Tag
         newptscolors = true;
 end
 
+% newptsdata should only be true if at least one of the checkboxes is true
+if newptsdata
+    newptsdata = get(handles.overlay_ch1_checkbox, 'Value') ||...
+        get(handles.overlay_ch2_checkbox, 'Value');
+end
+if redrawpoints
+    redrawpoints = get(handles.overlay_ch1_checkbox, 'Value') ||...
+        get(handles.overlay_ch2_checkbox, 'Value');
+end
+
 if newdatarange % update image
     [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles);
     for i = 1:handles.nchannel
@@ -328,9 +349,11 @@ end
 if newdatarange || newistruct % || anything that means you need to reconstruct again
     [handles.Merge, handles.I] = imerge_from_imagestruct(handles.istruct);
     npts1 = arrayfun(@(s) numel(s.x), handles.data{1});
-    npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
     histogram(handles.npts1_axes, npts1(:));
-    histogram(handles.npts2_axes, npts2(:));
+    if handles.nchannel > 1
+        npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
+        histogram(handles.npts2_axes, npts2(:));
+    end
 end
 
 if redrawimage

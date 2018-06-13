@@ -22,7 +22,7 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 25-Apr-2018 18:57:59
+% Last Modified by GUIDE v2.5 13-Jun-2018 10:49:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -93,11 +93,15 @@ set(handles.final_fname_edit, 'String', record.final_fname);
 
 function handles = load_all(handles)
 % record: load if it exists, make a new one if not
+% CHANGE this when record struct is updated
+record_version = 0.1;
+
 if exist(handles.record_fname, 'file')
-    record = load(handles.record_fname);
+    record = validate_record(load(handles.record_fname), record_version);
     handles.nchannels = numel(record.SPspecs);
 else
-    record = SP_record_default(handles.nchannels);
+    % TODO: check whether this is reachable (isn't new record creation handled separately?)
+    record = validate_record(SP_record_default(handles.nchannels), record.version);
 end
 
 handles.record = record;
@@ -106,18 +110,17 @@ set_fname_fields(handles);
 
 cd(handles.here);
 
-% enable/disable buttons/fields
+% enable/disable buttons/fields depending on nchannels
 if handles.nchannels == 1
-    set(handles.choose_transform_button, 'Enable', 'off');
-    set(handles.transformed_fname_edit, 'Enable', 'off');
     set(handles.cullspec2_button, 'Enable', 'off');
 elseif handles.nchannels == 2
-    set(handles.choose_transform_button, 'Enable', 'on');
-    set(handles.transformed_fname_edit, 'Enable', 'on');
     set(handles.cullspec2_button, 'Enable', 'on');
 else
     warning('I don''t know how to handle that number of channels, proceed at own risk');
 end
+
+% enable/disable transform stuff depending on record.transform_channel
+tform_uielements_enable_disable(handles);
 
 % datasets
 fnames = {record.fits_fname, record.transformed_fname, ...
@@ -377,7 +380,7 @@ if isempty(fits)
     error('geometry: No fits yet, aborting');
 end
 
-if handles.nchannels == 2 % only transform if dualview
+if handles.record.tform_channel % only transform if specified
 
     transf_fname = handles.record.dv_transform_fname;
     if exist(transf_fname, 'file')
@@ -393,9 +396,11 @@ if handles.nchannels == 2 % only transform if dualview
     set(handles.dilated_stat, 'String', 'Applying Transform ...');
     drawnow;
 
-    [tfdata] = apply_transform(fits.data{2}, tf);
+    [tfdata] = apply_transform(fits.data{handles.record.tform_channel}, tf);
 
-    transformed.data = {fits.data{1}, tfdata};
+    transformed.data = fits.data;
+    transformed.data{handles.record.tform_channel} = tfdata;
+
     transformed.date = datetime;
     transformed.produced_by = 'apply_transform';
     transformed.units = 'px';
@@ -411,7 +416,7 @@ drawnow;
 dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %to nm
 
 % do to different datasets depending on number of channels
-if handles.nchannels == 1
+if isempty(handles.nchannels)
     startdata = fits;
 elseif handles.nchannels == 2
     startdata = transformed;
@@ -609,3 +614,28 @@ end
 data_name = tokens{1}{1};
 d = getdataset(handles, data_name);
 inspect_STORMdata(d);
+
+
+function tform_checkbox_Callback(hObject, eventdata, handles)
+if get(hObject, 'Value')
+    handles.record.tform_channel = handles.nchannels;
+else
+    handles.record.tform_channel = [];
+end
+tform_uielements_enable_disable(handles);
+guidata(hObject, handles);
+
+
+function tform_uielements_enable_disable(handles)
+tform_channel = handles.record.tform_channel;
+
+% enable/disable transform stuff depending on record.tform_channel
+if isempty(tform_channel)
+    set(handles.choose_transform_button, 'Enable', 'off');
+    set(handles.transformed_fname_edit, 'Enable', 'off');
+    set(handles.tform_checkbox, 'Value', false);
+else
+    set(handles.choose_transform_button, 'Enable', 'on');
+    set(handles.transformed_fname_edit, 'Enable', 'on');
+    set(handles.tform_checkbox, 'Value', true);
+end
