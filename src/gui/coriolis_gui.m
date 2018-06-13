@@ -416,9 +416,9 @@ drawnow;
 dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %to nm
 
 % do to different datasets depending on number of channels
-if isempty(handles.nchannels)
+if isempty(handles.record.tform_channel)
     startdata = fits;
-elseif handles.nchannels == 2
+else
     startdata = transformed;
 end
 
