@@ -91,6 +91,20 @@ set(handles.dilated_fname_edit, 'String', record.dilated_fname);
 set(handles.culled_fname_edit, 'String', record.culled_fname);
 set(handles.final_fname_edit, 'String', record.final_fname);
 
+% enable/disable transform stuff depending on record.tform_channel
+function tform_uielements_enable_disable(handles)
+tform_channel = handles.record.tform_channel;
+
+if isempty(tform_channel)
+    set(handles.choose_transform_button, 'Enable', 'off');
+    set(handles.transformed_fname_edit, 'Enable', 'off');
+    set(handles.tform_checkbox, 'Value', false);
+else
+    set(handles.choose_transform_button, 'Enable', 'on');
+    set(handles.transformed_fname_edit, 'Enable', 'on');
+    set(handles.tform_checkbox, 'Value', true);
+end
+
 function handles = load_all(handles)
 % record: load if it exists, make a new one if not
 % CHANGE this when record struct is updated
@@ -100,7 +114,7 @@ if exist(handles.record_fname, 'file')
     record = validate_record(load(handles.record_fname), record_version);
     handles.nchannels = numel(record.SPspecs);
 else
-    % TODO: check whether this is reachable (isn't new record creation handled separately?)
+    % This is here because load_all is called after a new record_fname is chosen
     record = validate_record(SP_record_default(handles.nchannels), record.version);
 end
 
@@ -190,62 +204,24 @@ for i = 1:numel(fnames)
 end
 guidata(handles.figure1, handles);
 
-%TODO: generalize, via a savedataset function (culled is done right, the
-%others aren't quite)
+% Save everything that should be saved
 function save_all(handles)
+tic;
 record = handles.record;
 
+here_now = cd;
 cd(handles.here);
 
 % save record
+fprintf('Saving record as %s\n', handles.record_fname);
 save(handles.record_fname, '-struct', 'record');
 
-% save fits
-if isfield(handles, 'fits') && ~isempty(handles.fits) && ...
-        ~isempty(handles.fits.data)
-    fits = getdataset(handles, 'fits');
-    save(record.fits_fname, '-struct', 'fits')
-else
-    warning('no fits to save');
-end
+% save datasets
+datanames = {'fits', 'transformed', 'dilated', 'culled', 'final'};
+cellfun(@(name) savedataset(handles, name), datanames);
 
-% save transformed
-if ~isempty(record.transformed_fname)
-    if isfield(handles, 'transformed') && ~isempty(handles.transformed)
-        transformed = getdataset(handles, 'transformed');
-        save(record.transformed_fname, '-struct', 'transformed')
-    else
-        warning('no transformed data to save');
-    end
-end
-
-% save dilated
-if isfield(handles, 'dilated') && ~isempty(handles.dilated) && ...
-        ~isempty(handles.dilated.data)
-    dilated = getdataset(handles, 'dilated');
-    save(record.dilated_fname, '-struct', 'dilated')
-else
-    warning('no dilated data to save');
-end
-
-% save culled
-if ~isempty(record.culled_fname)
-    if isfield(handles, 'culled') && ~isempty(handles.culled)
-        culled = getdataset(handles, 'culled');
-        save(record.culled_fname, '-struct', 'culled')
-    else
-        warning('no culled data to save');
-    end
-end
-
-% save final data
-if isfield(handles, 'final') && ~isempty(handles.final) && ...
-        ~isempty(handles.final.data)
-    final = getdataset(handles, 'final');
-    save(record.final_fname, '-struct', 'final')
-else
-    warning('no drift-corrected data to save');
-end
+fprintf('Done with save_all: %f s\n', toc);
+cd(here_now);
 
 % Get filename for new record
 function fname = ask_for_record_fname(titlestr)
@@ -259,7 +235,9 @@ end
 
 % add .mat if appropriate
 function fname = mat_ify(fname)
-if length(fname) < 4 || ~strcmp(fname((end-3):end), '.mat')
+if isempty(fname)
+    return;
+elseif length(fname) < 4 || ~strcmp(fname((end-3):end), '.mat')
     fname = [fname '.mat'];
 end
 
@@ -288,6 +266,34 @@ else
     cd(now_here);
 end
 
+function savedataset(handles, name)
+% check whether dataset should be saved and if dataset exists and is nonempty
+if ~isempty(handles.record.([name, '_fname']))...
+            && isfield(handles, name) && ~isempty(handles.(name))
+    now_here = cd;
+    cd(handles.here);
+
+    fname_to_save = handles.record.([name, '_fname']);
+
+    % don't save if the dataset is uncached data from the same file
+    if ~(isempty(handles.(name).data) && strcmp(handles.(name).fname, fname_to_save))
+        save_it = true;
+        if exist(fname_to_save, 'file') % also check times
+            ss = load(fname_to_save, 'date');
+            if (handles.(name).date - ss.date) == 0
+                save_it = false;
+            end
+        end
+        
+        if save_it
+            fprintf('saving %s data to %s\n', name, fname_to_save);
+            d = getdataset(handles, name);
+            save(fname_to_save, '-struct', 'd')
+        end
+    end
+
+    cd(now_here);
+end
 
 %% Callbacks
 function choose_button_Callback(hObject, ~, handles) %#ok<*DEFNU>
@@ -615,7 +621,6 @@ data_name = tokens{1}{1};
 d = getdataset(handles, data_name);
 inspect_STORMdata(d);
 
-
 function tform_checkbox_Callback(hObject, eventdata, handles)
 if get(hObject, 'Value')
     handles.record.tform_channel = handles.nchannels;
@@ -624,18 +629,3 @@ else
 end
 tform_uielements_enable_disable(handles);
 guidata(hObject, handles);
-
-
-function tform_uielements_enable_disable(handles)
-tform_channel = handles.record.tform_channel;
-
-% enable/disable transform stuff depending on record.tform_channel
-if isempty(tform_channel)
-    set(handles.choose_transform_button, 'Enable', 'off');
-    set(handles.transformed_fname_edit, 'Enable', 'off');
-    set(handles.tform_checkbox, 'Value', false);
-else
-    set(handles.choose_transform_button, 'Enable', 'on');
-    set(handles.transformed_fname_edit, 'Enable', 'on');
-    set(handles.tform_checkbox, 'Value', true);
-end
