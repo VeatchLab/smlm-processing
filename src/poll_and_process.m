@@ -13,7 +13,7 @@ while true
         pause(600);
     end
     for i = 1:numel(newdirs)
-        if ~isempty(regexp(newdirs{i}, 'cell', 'once'))
+        if ~isempty(regexp(newdirs{i}, '[Cc]ell', 'once'))
             disp(['fitting to do in ' newdirs{i}]);
             cd(newdirs{i});
             files = dir();
