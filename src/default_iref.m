@@ -1,4 +1,12 @@
 function iref = default_iref(data, psize)
+% DEFAULT_IREF make an imref2d that's appropriate for a given dataset or window
+%    DEFAULT_IREF(DATA, PSIZE) makes smallest imref2d that contains all the data,
+%                               with pixels of size psize. The data may be formatted
+%                               as standard stormprocess data or as an nx2 list of
+%                               points.
+%
+%    DEFAULT_IREF(RANGE, PSIZE) sets the data range from the window
+%                                   RANGE = [left right top bottom];
 
 if isnumeric(data)
     if size(data) == [1 4] % user gave a window
