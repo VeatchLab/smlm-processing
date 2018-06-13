@@ -22,7 +22,7 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 13-Jun-2018 15:22:28
+% Last Modified by GUIDE v2.5 13-Jun-2018 18:54:52
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -77,6 +77,18 @@ function varargout = coriolis_gui_OutputFcn(hObject, ~, handles)
 if ~isempty(handles)
     varargout{1} = handles.output;
 end
+
+function figure1_CloseRequestFcn(hObject, eventdata, handles)
+if data_since_last_save(handles)
+    answer = questdlg({'At least one dataset has been modified since last save.',...
+        'Close without saving?'});
+
+    switch answer
+        case {'No', 'Cancel'}
+            return;
+    end
+end
+delete(hObject);
 
 %% My functions
 function set_fname_fields(handles)
@@ -208,6 +220,8 @@ for i = 1:numel(fnames)
     handles.(snames{i}) = s;
         
 end
+
+handles.last_save_date = datetime;
 guidata(handles.figure1, handles);
 
 % Save everything that should be saved
@@ -227,7 +241,23 @@ datanames = {'fits', 'transformed', 'dilated', 'culled', 'final'};
 cellfun(@(name) savedataset(handles, name), datanames);
 
 fprintf('Done with save_all: %f s\n', toc);
+handles.last_save_date = datetime;
+guidata(handles.figure1, handles);
 cd(here_now);
+
+function tf = data_since_last_save(handles)
+t_data = [];
+datanames = {'fits', 'transformed', 'dilated', 'culled', 'final'};
+for i = 1:numel(datanames)
+    if isfield(handles, datanames{i}) && isfield(handles.(datanames{i}), 'date')
+        d = handles.(datanames{i}).date;
+        if isempty(t_data) || (d - t_data) > 0
+            t_data = d;
+        end
+    end
+end
+
+tf = ((t_data - handles.last_save_date) > 0);
 
 % Get filename for new record
 function fname = ask_for_record_fname(titlestr)
@@ -670,4 +700,3 @@ else
 end
 tform_uielements_enable_disable(handles);
 guidata(hObject, handles);
-
