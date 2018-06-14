@@ -127,7 +127,8 @@ if exist(handles.record_fname, 'file')
     handles.nchannels = numel(record.SPspecs);
 else
     % This is here because load_all is called after a new record_fname is chosen
-    record = validate_record(SP_record_default(handles.nchannels), record.version);
+    record = SP_record_default(handles.nchannels);
+    record = validate_record(record, record_version);
 end
 
 handles.record = record;
