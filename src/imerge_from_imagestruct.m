@@ -34,7 +34,8 @@ for i = 1:istruct.channels
     % sigmas need to be in units of reconstruction pixels
     sigma = istruct.sigmablur(i)/istruct.psize; 
 
-    PSF = 2*pi*sigma^2*fspecial('gaussian', ceil(4*sigma), sigma);
+%     PSF = 2*pi*sigma^2*fspecial('gaussian', ceil(4*sigma), sigma);
+    PSF = fspecial('gaussian', ceil(4*sigma), sigma);
 
     Iblur = imfilter(I, PSF, 'replicate');
 

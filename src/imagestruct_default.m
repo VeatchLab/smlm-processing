@@ -31,3 +31,7 @@ if nchan == 1
 else
     is.color = {'green', 'magenta'};
 end
+
+is.channel_names = cell(1,nchan);
+is.maskx = cell(1,0);
+is.masky = cell(1,0);
