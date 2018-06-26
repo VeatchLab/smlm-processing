@@ -215,6 +215,8 @@ set(handles.lastmovie_edit, 'String', lastmov)
 set(handles.firstframe_edit, 'String', firstframe)
 set(handles.lastframe_edit, 'String', lastframe)
 
+% This is awful. Rewrite from scratch? Making all the uielements
+% call the same callback was a mistake.
 function reconstruct_Callback(hObject, ~, handles) %#ok<*DEFNU>
 newdatarange = false;
 newistruct = false;
@@ -279,6 +281,10 @@ end
 if redrawpoints
     redrawpoints = get(handles.overlay_ch1_checkbox, 'Value') ||...
         get(handles.overlay_ch2_checkbox, 'Value');
+    if ~redrawpoints % clear points
+        delete(handles.pts);
+        handles.pts = [];
+    end
 end
 
 if newdatarange % update image
@@ -306,7 +312,7 @@ if newptsdata % update which points are here
     color_by = color_by{c_ind};
     switch color_by
         case 'solid'
-            handles.c = 'red';
+            handles.c = [1 0 0];
             set(handles.pts_cmin_edit, 'Enable', 'off');
             set(handles.pts_cmax_edit, 'Enable', 'off');
             c_field = false;
