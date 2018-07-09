@@ -258,7 +258,11 @@ for i = 1:numel(datanames)
     end
 end
 
-tf = ((t_data - handles.last_save_date) > 0);
+if isempty(t_data)
+    tf = false;
+else
+    tf = ((t_data - handles.last_save_date) > 0);
+end
 
 % Get filename for new record
 function fname = ask_for_record_fname(titlestr)

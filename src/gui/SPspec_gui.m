@@ -331,12 +331,12 @@ end
 
 function bg_type_menu_Callback(hObject, ~, handles)
 vals = get(hObject, 'String');
-val = vals(get(hObject, 'Value'));
+val = vals{get(hObject, 'Value')};
 handles.specs(handles.channel).bg_type = val;
 guidata(hObject, handles);
 function bg_method_menu_Callback(hObject, ~, handles)
 vals = get(hObject, 'String');
-val = vals(get(hObject, 'Value'));
+val = vals{get(hObject, 'Value')};
 handles.specs(handles.channel).bg_method = val;
 guidata(hObject, handles);
 

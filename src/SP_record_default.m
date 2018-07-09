@@ -4,11 +4,6 @@ if nargin < 1
     nchan = 2; % dualview by default
 end
 
-if nchan == 1
-    record.SPspecs = default_specs_singleview(varargin{:});
-elseif nchan == 2
-    record.SPspecs = default_specs_dualview(varargin{:});
-end
 record.cullspecs = repmat({cull_defaults()}, 1, nchan);
 record.dv_transform_fname = '';
 
@@ -29,3 +24,23 @@ record.culled_fname = '';
 record.final_fname = 'final.mat';
 
 record.version = 0.1;
+
+% Process arguments
+i = find(strcmp(varargin, 'transform'))
+if ~isempty(i)
+    record.dv_transform_fname = varargin{i + 1};
+    % extra args will go into stormprocess specs
+    inds = 1:numel(varargin);
+    inds = (inds ~= i & inds ~= i+1);
+    SP_args = varargin{inds};
+else
+    record.dv_transform_fname = '';
+    SP_args = varargin;
+end
+
+
+if nchan == 1
+    record.SPspecs = default_specs_singleview(SP_args{:});
+elseif nchan == 2
+    record.SPspecs = default_specs_dualview(SP_args{:});
+end
