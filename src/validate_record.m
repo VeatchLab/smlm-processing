@@ -31,6 +31,16 @@ switch record.version
         end
 
         record.version = 0.1;
+        
+    case 0.1
+        record.res_specs = resolution_default('nm');
+        record.grouping_specs = grouping_default('nm');
+        record.grouped = [];
+        record.grouped_fname = [];
+        record.resolution = [];
+
+        record.version = 0.2;
+
     otherwise
         error({'update_record: I can''t update this record because I don''t know',...
             'about it''s version'});

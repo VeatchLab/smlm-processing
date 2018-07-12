@@ -22,7 +22,7 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 13-Jun-2018 18:54:52
+% Last Modified by GUIDE v2.5 12-Jul-2018 12:13:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -46,6 +46,8 @@ end
 function coriolis_gui_OpeningFcn(hObject, ~, handles, varargin)
 handles.output = hObject;
 guidata(hObject, handles);
+
+handles.datasets = {'fits', 'transformed', 'dilated', 'culled', 'final', 'grouped'};
 
 % Deal with files and stuff
 handles.here = cd;
@@ -102,6 +104,7 @@ set(handles.transformed_fname_edit, 'String', record.transformed_fname);
 set(handles.dilated_fname_edit, 'String', record.dilated_fname);
 set(handles.culled_fname_edit, 'String', record.culled_fname);
 set(handles.final_fname_edit, 'String', record.final_fname);
+set(handles.grouped_fname_edit, 'String', record.grouped_fname);
 
 % enable/disable transform stuff depending on record.tform_channel
 function tform_uielements_enable_disable(handles)
@@ -120,7 +123,7 @@ end
 function handles = load_all(handles)
 % record: load if it exists, make a new one if not
 % CHANGE this when record struct is updated
-record_version = 0.1;
+record_version = 0.2;
 
 if exist(handles.record_fname, 'file')
     record = validate_record(load(handles.record_fname), record_version);
@@ -156,9 +159,11 @@ end
 tform_uielements_enable_disable(handles);
 
 % datasets
+% fnames = cellfun(@(name) [name, '_fname'], handles.datasets, 'UniformOutput', false); % {record.fits_fname, record.transformed_fname, ...
+    % record.dilated_fname, record.culled_fname, record.final_fname};
 fnames = {record.fits_fname, record.transformed_fname, ...
-    record.dilated_fname, record.culled_fname, record.final_fname};
-snames = {'fits', 'transformed', 'dilated', 'culled', 'final'};
+     record.dilated_fname, record.culled_fname, record.final_fname, record.grouped_fname};
+snames = handles.datasets; %{'fits', 'transformed', 'dilated', 'culled', 'final', 'grouped'};
 
 ask_if_older = true;
 
@@ -238,7 +243,7 @@ fprintf('Saving record as %s\n', handles.record_fname);
 save(handles.record_fname, '-struct', 'record');
 
 % save datasets
-datanames = {'fits', 'transformed', 'dilated', 'culled', 'final'};
+datanames = handles.datasets; % {'fits', 'transformed', 'dilated', 'culled', 'final', 'grouped'};
 cellfun(@(name) savedataset(handles, name), datanames);
 
 fprintf('Done with save_all: %f s\n', toc);
@@ -248,7 +253,7 @@ cd(here_now);
 
 function tf = data_since_last_save(handles)
 t_data = [];
-datanames = {'fits', 'transformed', 'dilated', 'culled', 'final'};
+datanames = handles.datasets; % {'fits', 'transformed', 'dilated', 'culled', 'final'};
 for i = 1:numel(datanames)
     if isfield(handles, datanames{i}) && isfield(handles.(datanames{i}), 'date')
         d = handles.(datanames{i}).date;
@@ -705,3 +710,104 @@ else
 end
 tform_uielements_enable_disable(handles);
 guidata(hObject, handles);
+
+
+% --- Executes on button press in resgroup_specs_button.
+function resgroup_specs_button_Callback(hObject, eventdata, handles)
+% hObject    handle to resgroup_specs_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in calc_resolution_button.
+function calc_resolution_button_Callback(hObject, eventdata, handles)
+% hObject    handle to calc_resolution_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%data= handles.final.data;
+handles.resolution_text.String = 'Calculating...';
+drawnow
+final = getdataset(handles, 'final');
+data = final.data;
+record = handles.record;
+if isfield(record, 'resolution_specs')
+    options = record.resolution_specs;
+else
+    options = resolution_default('nm');
+    handles.record.resolution_specs = options;
+end
+    
+st = 'Done: ';
+for i=1:length(data)
+    tic
+    [res{i} info{i}] = calc_resolution(data{i}, options);%10, 5, 'sequential', 250);
+    toc
+    st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
+    figure
+    plot(info{i}.F, info{i}.rc(2:end), info{i}.c(2:end))
+    title(['chan' num2str(i) '; ' num2str(res{i}, 2) final.units]);
+end
+
+record.resolution = res;
+record.resolution_info = info;
+
+handles.resolution_text.String = st;
+drawnow
+
+handles.record = record;
+guidata(hObject, handles);
+
+% --- Executes on button press in grouping_button.
+function grouping_button_Callback(hObject, eventdata, handles)
+% hObject    handle to grouping_button (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+final = getdataset(handles, 'final');
+%d = final.data;
+record = handles.record;
+
+if isfield(record, 'resolution_specs')
+    options = record.grouping_specs;
+else
+    options = grouping_default('nm');
+    handles.record.grouping_specs = options;
+end
+
+
+how = options.how;
+
+switch how
+    case 'auto'
+        if ~isempty(record.resolution)
+            res = record.resolution;            
+            groupr = cellfun(@(r) options.multfac*r, res, 'UniformOutput', false);
+        else
+            groupr = num2cell(30*ones(size(record.SPspecs)));
+        end
+    case 'fixed'
+        groupr = num2cell(options.groupr*ones(size(record.SPspecs))); 
+end
+
+            
+handles.grouped_stat.String = 'Grouping...';
+drawnow
+
+
+grouped.data = cellfun(@(d,r) groupSTORM(d, r), final.data, groupr, 'UniformOutput', false);
+
+grouped.date = datetime;
+grouped.produced_by = 'apply_grouping';
+grouped.units = 'nm';
+grouped.groupr = groupr;
+
+handles.grouped = grouped;
+guidata(hObject, handles);
+
+handles.grouped_stat.String = 'Grouping complete';
+drawnow
+
+
+function grouping_specs_button_Callback(hObject, eventdata, handles)
+
+

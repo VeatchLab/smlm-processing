@@ -22,8 +22,10 @@ record.transformed_fname = '';
 record.dilated_fname = 'transformed.mat';
 record.culled_fname = '';
 record.final_fname = 'final.mat';
+record.res_specs = resolution_default('nm');
+record.grouping_specs = grouping_default('nm');
 
-record.version = 0.1;
+record.version = 0.2;
 
 % Process arguments
 i = find(strcmp(varargin, 'transform'))
