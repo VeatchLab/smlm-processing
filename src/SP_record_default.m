@@ -22,13 +22,16 @@ record.transformed_fname = '';
 record.dilated_fname = 'transformed.mat';
 record.culled_fname = '';
 record.final_fname = 'final.mat';
+
+% new in version 0.2
+record.grouped_fname = '';
 record.res_specs = resolution_default('nm');
 record.grouping_specs = grouping_default('nm');
 
 record.version = 0.2;
 
 % Process arguments
-i = find(strcmp(varargin, 'transform'))
+i = find(strcmp(varargin, 'transform'));
 if ~isempty(i)
     record.dv_transform_fname = varargin{i + 1};
     % extra args will go into stormprocess specs

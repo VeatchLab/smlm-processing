@@ -99,12 +99,10 @@ record = handles.record;
 set(handles.fname_text, 'String', handles.record_fname);
 
 % set edit fields to show real filenames
-set(handles.fits_fname_edit, 'String', record.fits_fname);
-set(handles.transformed_fname_edit, 'String', record.transformed_fname);
-set(handles.dilated_fname_edit, 'String', record.dilated_fname);
-set(handles.culled_fname_edit, 'String', record.culled_fname);
-set(handles.final_fname_edit, 'String', record.final_fname);
-set(handles.grouped_fname_edit, 'String', record.grouped_fname);
+snames = handles.datasets;
+fname_edits = cellfun(@(name) [name '_fname_edit'], snames, 'UniformOutput', false);
+fnames = cellfun(@(name) [name '_fname'], snames, 'UniformOutput', false);
+cellfun(@(ed,fn) set(handles.(ed), 'String', record.(fn)), fname_edits, fnames);
 
 % enable/disable transform stuff depending on record.tform_channel
 function tform_uielements_enable_disable(handles)
@@ -159,11 +157,9 @@ end
 tform_uielements_enable_disable(handles);
 
 % datasets
-% fnames = cellfun(@(name) [name, '_fname'], handles.datasets, 'UniformOutput', false); % {record.fits_fname, record.transformed_fname, ...
-    % record.dilated_fname, record.culled_fname, record.final_fname};
-fnames = {record.fits_fname, record.transformed_fname, ...
-     record.dilated_fname, record.culled_fname, record.final_fname, record.grouped_fname};
-snames = handles.datasets; %{'fits', 'transformed', 'dilated', 'culled', 'final', 'grouped'};
+snames = handles.datasets;
+fnames = cellfun(@(name) record.([name, '_fname']), snames,...
+    'UniformOutput', false);
 
 ask_if_older = true;
 
@@ -243,7 +239,7 @@ fprintf('Saving record as %s\n', handles.record_fname);
 save(handles.record_fname, '-struct', 'record');
 
 % save datasets
-datanames = handles.datasets; % {'fits', 'transformed', 'dilated', 'culled', 'final', 'grouped'};
+datanames = handles.datasets;
 cellfun(@(name) savedataset(handles, name), datanames);
 
 fprintf('Done with save_all: %f s\n', toc);
@@ -253,7 +249,7 @@ cd(here_now);
 
 function tf = data_since_last_save(handles)
 t_data = [];
-datanames = handles.datasets; % {'fits', 'transformed', 'dilated', 'culled', 'final'};
+datanames = handles.datasets;
 for i = 1:numel(datanames)
     if isfield(handles, datanames{i}) && isfield(handles.(datanames{i}), 'date')
         d = handles.(datanames{i}).date;
@@ -712,20 +708,8 @@ tform_uielements_enable_disable(handles);
 guidata(hObject, handles);
 
 
-% --- Executes on button press in resgroup_specs_button.
 function resgroup_specs_button_Callback(hObject, eventdata, handles)
-% hObject    handle to resgroup_specs_button (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-
-% --- Executes on button press in calc_resolution_button.
 function calc_resolution_button_Callback(hObject, eventdata, handles)
-% hObject    handle to calc_resolution_button (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-%data= handles.final.data;
 handles.resolution_text.String = 'Calculating...';
 drawnow
 final = getdataset(handles, 'final');
@@ -758,13 +742,8 @@ drawnow
 handles.record = record;
 guidata(hObject, handles);
 
-% --- Executes on button press in grouping_button.
 function grouping_button_Callback(hObject, eventdata, handles)
-% hObject    handle to grouping_button (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 final = getdataset(handles, 'final');
-%d = final.data;
 record = handles.record;
 
 if isfield(record, 'resolution_specs')
@@ -809,5 +788,3 @@ drawnow
 
 
 function grouping_specs_button_Callback(hObject, eventdata, handles)
-
-
