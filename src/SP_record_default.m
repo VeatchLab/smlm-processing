@@ -37,7 +37,7 @@ if ~isempty(i)
     % extra args will go into stormprocess specs
     inds = 1:numel(varargin);
     inds = (inds ~= i & inds ~= i+1);
-    SP_args = varargin{inds};
+    SP_args = varargin(inds);
 else
     record.dv_transform_fname = '';
     SP_args = varargin;
