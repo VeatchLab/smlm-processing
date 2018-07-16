@@ -22,7 +22,7 @@ function varargout = inspect_STORMdata(varargin)
 
 % Edit the above text to modify the response to help inspect_STORMdata
 
-% Last Modified by GUIDE v2.5 07-May-2018 15:36:59
+% Last Modified by GUIDE v2.5 16-Jul-2018 17:19:02
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -64,6 +64,7 @@ end
 handles.data = handles.datastruct.data;
 handles.nchannel = numel(handles.data);
 
+
 s = size(handles.data{1});
 handles.maxmov = s(1);
 handles.maxframe = s(2);
@@ -80,8 +81,12 @@ set(handles.color_by_menu, 'String', fields);
 
 % get preliminary imagestruct and reconstruction
 handles.istruct = imagestruct_default(handles.datastruct);
+set(handles.units_text, 'String', ['Units: ', handles.istruct.units]);
+
 [handles.Merge, handles.I] = imerge_from_imagestruct(handles.istruct);
 handles.Itoshow = handles.Merge;
+
+set(handles.psize_edit, 'String', num2str(handles.istruct.psize));
 
 set(handles.cmax1_edit, 'String', num2str(handles.istruct.cmax(1)));
 
@@ -99,8 +104,8 @@ handles.im = imshow(handles.Itoshow, handles.istruct.imageref, ...
 h = zoom(r_axes);
 h.Enable = 'on';
 h.ActionPreCallback = @(obj, evd) pre_zoom_callback(evd.Axes);
-h.ActionPostCallback = @(obj, evd) post_zoom_callback(evd.Axes);
-post_zoom_callback(r_axes);
+h.ActionPostCallback = @(obj, evd) post_zoom_callback(evd.Axes, handles.istruct.units);
+post_zoom_callback(r_axes, handles.istruct.units);
 axis(r_axes, 'equal','off');
 handles.pts = [];
 handles.cbar = [];
@@ -145,7 +150,7 @@ for i = 1:numel(c)
 end
 
 % Callback to draw new scalebar after zoom event
-function post_zoom_callback(ax)
+function post_zoom_callback(ax, units)
 newxlim = ax.XLim;
 newylim = ax.YLim;
 newlim = max(diff(newxlim), diff(newylim));
@@ -158,10 +163,10 @@ elseif (newscalebarlen/newscalebarmag > 2)
     newscalebarlen = newscalebarmag*5;
 end
 
-if newscalebarmag > 500 %nm
+if strcmp(units, 'nm') && newscalebarmag > 500 % go to um
     labeltext = [num2str(newscalebarlen / 1000), ' {\mu}m'];
 else
-    labeltext = [num2str(newscalebarlen), ' nm'];
+    labeltext = [num2str(newscalebarlen), ' ', units];
 end
 
 left = newxlim(1) + newlim/50;
@@ -219,51 +224,15 @@ set(handles.lastframe_edit, 'String', lastframe)
 % call the same callback was a mistake.
 function reconstruct_Callback(hObject, ~, handles) %#ok<*DEFNU>
 newdatarange = false;
-newistruct = false;
 newptsdata = false;
-redrawimage = false;
 redrawpoints = false;
 newptscolors = false;
 switch hObject.Tag
-    case {'reconstruct_ch1_checkbox', 'reconstruct_ch2_checkbox'}
-        % only change image
-        redrawimage = true;
     case {'firstmovie_edit', 'lastmovie_edit',...
             'firstframe_edit', 'lastframe_edit'}
         newdatarange = true;
         newptsdata = true;
-        redrawimage = true;
         redrawpoints = true;
-    case 'cmax1_edit'
-        newistruct = true;
-        redrawimage = true;
-        newcmax = str2double(get(hObject, 'String'));
-        handles.istruct.cmax(1) = newcmax;
-    case 'cmax2_edit'
-        newistruct = true;
-        redrawimage = true;
-        newcmax = str2double(get(hObject, 'String'));
-        handles.istruct.cmax(2) = newcmax;
-    case 'color1_edit'
-        newistruct = true;
-        redrawimage = true;
-        newcolor = get(hObject, 'String');
-        handles.istruct.color(1) = newcolor;
-    case 'color2_edit'
-        newistruct = true;
-        redrawimage = true;
-        newcolor = get(hObject, 'String');
-        handles.istruct.color(2) = newcolor;
-    case 'psf1_edit'
-        newistruct = true;
-        redrawimage = true;
-        newpsf = str2double(get(hObject, 'String'));
-        handles.istruct.sigmablur(1) = newpsf;
-    case 'psf2_edit'
-        newistruct = true;
-        redrawimage = true;
-        newpsf = str2double(get(hObject, 'String'));
-        handles.istruct.sigmablur(2) = newpsf;
     case {'overlay_ch1_checkbox', 'overlay_ch2_checkbox', 'color_by_menu'}
         newptsdata = true;
         redrawpoints = true;
@@ -302,6 +271,12 @@ if newdatarange % update image
     
     handles.istruct.data.data = handles.data;
 
+    npts1 = arrayfun(@(s) numel(s.x), handles.data{1});
+    histogram(handles.npts1_axes, npts1(:));
+    if handles.nchannel > 1
+        npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
+        histogram(handles.npts2_axes, npts2(:));
+    end
 end
 
 if newptsdata % update which points are here
@@ -352,35 +327,9 @@ if newptsdata % update which points are here
     end
 end
 
-if newdatarange || newistruct % || anything that means you need to reconstruct again
+if newdatarange
     [handles.Merge, handles.I] = imerge_from_imagestruct(handles.istruct);
-    npts1 = arrayfun(@(s) numel(s.x), handles.data{1});
-    histogram(handles.npts1_axes, npts1(:));
-    if handles.nchannel > 1
-        npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
-        histogram(handles.npts2_axes, npts2(:));
-    end
-end
-
-if redrawimage
-    usechan = zeros(1,handles.nchannel);
-    usechan(1) = get(handles.reconstruct_ch1_checkbox, 'Value');
-    usechan(2) = get(handles.reconstruct_ch2_checkbox, 'Value');
-    if all(usechan)
-        handles.Itoshow = handles.Merge;
-    elseif ~any(usechan)
-        handles.Itoshow = zeros([handles.istruct.imageref.ImageSize, 3]);
-    else
-        ind = find(usechan);
-        handles.Itoshow = handles.I{ind(1)};
-    end
-
-    if isempty(handles.im)
-        handles.im = imshow(handles.Itoshow, handles.istruct.imageref, ...
-                    'Parent', r_axes, 'Border', 'tight');
-    else
-        set(handles.im, 'CData', handles.Itoshow)
-    end
+    redraw_image(handles);
 end
 
 if redrawpoints
@@ -400,7 +349,7 @@ if redrawpoints
     
     if size(handles.c) == size(handles.x)
         handles.cbar = colorbar('peer', handles.r_axes);
-    elseif ~isempty(handles.cbar);
+    elseif ~isempty(handles.cbar)
         colorbar(handles.cbar, 'off');
         handles.cbar = [];
     end
@@ -412,5 +361,73 @@ end
 
 guidata(hObject, handles);
 
+function redraw_image(handles)
+% Figure out which image
+usechan = zeros(1,handles.nchannel);
+usechan(1) = get(handles.reconstruct_ch1_checkbox, 'Value');
+usechan(2) = get(handles.reconstruct_ch2_checkbox, 'Value');
+if all(usechan)
+    Itoshow = handles.Merge;
+elseif ~any(usechan)
+    Itoshow = zeros([handles.istruct.imageref.ImageSize, 3]);
+else
+    ind = find(usechan);
+    Itoshow = handles.I{ind(1)};
+end
+
+% do the drawing
+if isempty(handles.im)
+    handles.im = imshow(Itoshow, handles.istruct.imageref, ...
+                'Parent', handles.r_axes, 'Border', 'tight');
+else
+    set(handles.im, 'CData', Itoshow)
+end
+
 function save_button_Callback(~, ~, handles)
 imwrite(handles.Itoshow, 'img.tif');
+
+
+function new_istruct_field_num(hObject, handles, fieldname, chan)
+newval = str2double(get(hObject, 'String'));
+handles.istruct.(fieldname)(chan) = newval;
+
+% change the pixel size necessitates changing the imageref, too
+if strcmp(fieldname, 'psize')
+    handles.istruct.imageref = default_iref(handles.data{1}, newval);
+end
+
+[handles.Merge, handles.I] = imerge_from_imagestruct(handles.istruct);
+guidata(hObject, handles);
+redraw_image(handles);
+
+function new_istruct_field_str(hObject, handles, fieldname, chan)
+newval = get(hObject, 'String');
+handles.istruct.(fieldname)(chan) = newval;
+
+[handles.Merge, handles.I] = imerge_from_imagestruct(handles.istruct);
+guidata(hObject, handles);
+redraw_image(handles);
+
+function cmax1_edit_Callback(hObject, ~, handles)
+new_istruct_field_num(hObject,handles,'cmax', 1);
+
+function cmax2_edit_Callback(hObject, ~, handles)
+new_istruct_field_num(hObject,handles,'cmax', 2);
+
+function psf1_edit_Callback(hObject, ~, handles)
+new_istruct_field_num(hObject, handles, 'sigmablur', 1);
+
+function psf2_edit_Callback(hObject, ~, handles)
+new_istruct_field_num(hObject, handles, 'sigmablur', 2);
+
+function psize_edit_Callback(hObject, ~, handles)
+new_istruct_field_num(hObject, handles, 'psize', 1);
+
+function color1_edit_Callback(hObject, ~, handles)
+new_istruct_field_str(hObject,handles,'color', 1);
+
+function color2_edit_Callback(hObject, ~, handles)
+new_istruct_field_str(hObject,handles,'color', 2);
+
+function reconstruct_checkbox_Callback(~, ~, handles)
+redraw_image(handles);
