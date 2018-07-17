@@ -1,8 +1,9 @@
-function c = xcors_from_imagestructs(is, r)
+function [c errs] = xcors_from_imagestructs(is, r)
 
 nimage = numel(is);
 nmask = sum(cellfun(@numel, {is.maskx}));
 c = zeros(nmask, numel(r));
+errs = zeros(nmask, numel(r));
 
 ii = 0;
 for i = 1:nimage
@@ -35,6 +36,6 @@ for i = 1:nimage
         t1 = tree_from_points(box, pts1, 1000);
         t2 = tree_from_points(box, pts2, 1000);
 
-        c(ii,:) = xcor_tree(t1, t2, r, maskx, masky);
+        [c(ii,:), errs(ii,:)] = xcor_tree(t1, t2, r, maskx, masky);
     end
 end
