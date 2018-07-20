@@ -6,6 +6,7 @@ if ~isfield(record, 'version')
     record.version = 0;
 end
 
+record.SPspecs = validate_SPspecs(record.SPspecs, 0.1);
 
 while record.version < version
     record = update_record(record);
