@@ -22,7 +22,7 @@ function varargout = SPspec_gui(varargin)
 
 % Edit the above text to modify the response to help SPspec_gui
 
-% Last Modified by GUIDE v2.5 08-May-2018 12:37:22
+% Last Modified by GUIDE v2.5 23-Jul-2018 05:43:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -97,6 +97,40 @@ set(handles.cdim2_edit, 'String', num2str(s.channel_dims(2)));
 set(handles.cdim3_edit, 'String', num2str(s.channel_dims(3)));
 set(handles.cdim4_edit, 'String', num2str(s.channel_dims(4)));
 
+fit_types = {'gaussianPSF', 'spline'};
+set(handles.fit_type_menu, 'String', fit_types);
+set(handles.fit_type_menu, 'Value', find(strcmp(fit_types, s.fit_method)));
+
+switch s.fit_method
+    case 'gaussianPSF'
+        handles.spline_calibration_button.Enable = 'inactive';
+        handles.spline_calibration_button.ForegroundColor = .5*[1 1 1];
+        handles.r_mingroup_edit.Enable = 'inactive';
+        handles.r_mingroup_edit.BackgroundColor = .9*[1 1 1];
+        handles.r_mingroup_edit.ForegroundColor = .5*[1 1 1];
+        handles.r_maxgroup_edit.Enable = 'inactive';
+        handles.r_maxgroup_edit.BackgroundColor = .9*[1 1 1];
+        handles.r_maxgroup_edit.ForegroundColor = .5*[1 1 1];
+        
+    case 'spline'
+        handles.spline_calibration_button.Enable = 'on';
+        handles.spline_calibration_button.ForegroundColor = [0 0 0];
+        handles.r_mingroup_edit.Enable = 'on';
+        handles.r_mingroup_edit.BackgroundColor = [1 1 1];
+        handles.r_mingroup_edit.ForegroundColor = [0 0 0];
+        handles.r_maxgroup_edit.Enable = 'on';
+        handles.r_maxgroup_edit.BackgroundColor = [1 1 1];
+        handles.r_maxgroup_edit.ForegroundColor = [0 0 0];
+end
+
+
+if ~isempty(s.spline_calibration_fname)
+    [~, cfile] = fileparts(s.spline_calibration_fname);
+    handles.spline_calib_file_text.String = cfile;
+end
+
+
+
 set(handles.thresh_edit, 'String', num2str(s.thresh));
 bg_types = {'median', 'mean', 'selective', 'none'};
 bg_methods = {'standard', 'true', 'unif'};
@@ -127,6 +161,8 @@ end
 set(handles.PSFwidth_edit, 'String', num2str(s.PSFwidth));
 set(handles.r_centroid_edit, 'String', num2str(s.r_centroid));
 set(handles.r_neighbor_edit, 'String', num2str(s.r_neighbor));
+set(handles.r_mingroup_edit, 'String', num2str(s.r_mingroup));
+set(handles.r_maxgroup_edit, 'String', num2str(s.r_maxgroup));
 
 set(handles.nmax_edit, 'String', num2str(s.nmax/1000));
 set(handles.mle_iters_edit, 'String', num2str(s.mle_iters));
@@ -355,3 +391,43 @@ val = round(str2double(get(hObject, 'String'))*1000);
 set(hObject, 'String', num2str(val/1000));
 handles.specs(handles.channel).nmax = val;
 guidata(hObject,handles);
+
+
+
+function r_mingroup_edit_Callback(hObject, eventdata, handles)
+val = round(str2double(get(hObject,'String')));
+handles.specs(handles.channel).r_mingroup=val;
+set(hObject, 'String', num2str(val));
+guidata(hObject, handles);
+
+function r_maxgroup_edit_Callback(hObject, eventdata, handles)
+val = round(str2double(get(hObject,'String')));
+handles.specs(handles.channel).r_maxgroup=val;
+set(hObject, 'String', num2str(val));
+guidata(hObject, handles);
+
+function fit_type_menu_Callback(hObject, eventdata, handles)
+contents = cellstr(get(hObject,'String'));
+handles.specs(handles.channel).fit_method = contents{get(hObject,'Value')};
+guidata(hObject, handles);
+update_fields_from_specs(handles, handles.channel);
+
+function spline_calibration_button_Callback(hObject, eventdata, handles)
+updateflag=0;
+if isempty(handles.specs(handles.channel).spline_calibration_fname);
+    [newfile, newpath] = uigetfile('*.mat', 'Select the spline calibration file...', 'MultiSelect', 'off'); 
+    if ~isequal(newfile,0) || ~isequal(newpath,0)
+        updateflag = 1;
+    end
+else
+    [cpath, cname, cext] = fileparts(handles.specs(handles.channel).spline_calibration_fname);
+    [newfile, newpath] = uigetfile([cpath '/*.mat'], 'Select the spline calibration file...', 'MultiSelect', 'off');
+    if ~isequal(newfile,0) || ~isequal(newpath,0)
+        updateflag = 1;
+    end
+end
+if updateflag
+    handles.specs(handles.channel).spline_calibration_fname = [newpath newfile];
+    guidata(hObject, handles);
+    update_fields_from_specs(handles, handles.channel);
+end
