@@ -383,6 +383,9 @@ else
     set(handles.im, 'CData', Itoshow)
 end
 
+handles.Itoshow = Itoshow;
+guidata(handles.figure1, handles);
+
 function save_button_Callback(~, ~, handles)
 imwrite(handles.Itoshow, 'img.tif');
 
