@@ -24,7 +24,7 @@ end
 
 cm_size = 64;
 cm = gray(cm_size);
-Imerge = zeros(ir.ImageSize);
+Imerge = zeros([ir.ImageSize, 3]);
 % Make images for each channel
 for i = 1:istruct.channels
     d = ds.data{i};
