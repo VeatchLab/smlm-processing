@@ -110,10 +110,16 @@ axis(r_axes, 'equal','off');
 handles.pts = [];
 handles.cbar = [];
 
+% axes for npoints histograms
 handles.npts1_axes = axes('Parent', handles.nperframe_panel, 'Units', 'Normalized',...
                 'Position', [0.2, 0.1, .75, .35]);
 npts1 = arrayfun(@(s) numel(s.x), handles.data{1});
 histogram(handles.npts1_axes, npts1(:));
+
+% axes for vals histogram
+handles.vals_axes = axes('Parent', handles.vals_panel, 'Units', 'Normalized', ...
+                'Position', [0.2 0.1 .75 .8]);
+handles.vals_hist = [];
 
 if handles.nchannel > 1
     set(handles.psf2_edit, 'String', num2str(handles.istruct.sigmablur(2)));
@@ -268,6 +274,10 @@ if redrawpoints
         get(handles.overlay_ch2_checkbox, 'Value');
     if ~redrawpoints % clear points
         delete(handles.pts);
+        if ~isempty(handles.vals_hist)
+            delete(handles.vals_hist)
+            handles.vals_hist = [];
+        end
         handles.pts = [];
     end
 end
@@ -362,6 +372,14 @@ if redrawpoints
         delete(handles.pts);
         handles.pts = [];
     end
+
+    if ~isempty(handles.x) && numel(handles.c) == numel(handles.x)
+        handles.vals_hist = histogram(handles.vals_axes, handles.c);
+    elseif ~isempty(handles.vals_hist)
+        delete(handles.vals_hist)
+        handles.vals_hist = [];
+    end
+
     
     if size(handles.c) == size(handles.x)
         handles.cbar = colorbar('peer', handles.r_axes);
