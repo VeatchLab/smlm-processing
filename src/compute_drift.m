@@ -23,10 +23,12 @@ include_diagnostics = specs.include_diagnostics;
 binspacing = (nframes - binwidth)/(nTimeBin-1);
 firstframe = round(1 + (0:nTimeBin-1)*binspacing);
 lastframe = min(nframes, firstframe + binwidth);
+ 
 
 % Initialize some stuff
 xshift = zeros(nTimeBin,1);
 yshift = zeros(nTimeBin,1);
+zshift = zeros(nTimeBin,1);
 
 dxshift = zeros(nTimeBin,1);
 dyshift = zeros(nTimeBin,1);
@@ -80,6 +82,9 @@ fgo1.Upper = [Inf, Inf, npx1, npx1, Inf];
 refdata = getnthdata(1);
 npoints(1) = numel([refdata.x]);
 refbin = 1;
+if specs.correctz
+    refmeanz = mean([refdata.z]);  % for now, correct z drift with time average.
+end
 while npoints(refbin) == 0
     refbin = refbin + 1;
     if refbin > nTimeBin
@@ -87,6 +92,9 @@ while npoints(refbin) == 0
     end
     refdata = getnthdata(refbin);
     npoints(refbin) = numel([refdata.x]);
+    if specs.correctz
+        refmeanz = mean([refdata.z]);  % for now, correct z drift with time average.
+    end
 end
 
 for i = (refbin + 1):nTimeBin
@@ -147,6 +155,10 @@ for i = (refbin + 1):nTimeBin
         finalfit = F; %for extracting parameters for diag
     end
     
+    if specs.correctz
+        zshift(i) = mean([thisdata.z])-refmeanz;
+    end
+    
     % extract parameters
     CI = confint(finalfit, .34);
     d = .5*(diff(CI, 1)); % standard errors
@@ -186,6 +198,9 @@ end
 
 xfit = interp1(midtiming, xshift(goodinds), timings, interp_method, 'extrap');
 yfit = interp1(midtiming, yshift(goodinds), timings, interp_method, 'extrap');
+if specs.correctz
+    zfit = interp1(midtiming, zshift(goodinds), timings, interp_method, 'extrap');
+end
 
 % info and diagnostics
 drift_info.xshift = xshift;
@@ -204,5 +219,8 @@ if include_diagnostics % optional because potentially large
     drift_info.finalfits = finalfits;
     drift_info.Csms = Csms;
 end
-
+if specs.correctz
+    drift_info.zfit = zfit;
+    drift_info.zshift = zshift;
+end
 shifteddata = apply_shifts(olddata, drift_info);

@@ -461,7 +461,8 @@ end
 set(handles.dilated_stat, 'String', 'Converting to nm ...');
 drawnow;
 
-dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %to nm
+dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %pixels to nm
+
 
 % do to different datasets depending on number of channels
 if isempty(handles.record.tform_channel)
@@ -471,8 +472,17 @@ else
 end
 
 % apply the dilation to each channel
-dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...
-                'UniformOutput', false);
+
+
+if strcmp(SPspecs.fit_method, 'spline')
+    load(SPspecs.spline_calibration_fname, 'actualz', 'beginheight');
+    dilateddata = cellfun(@(d) dilatepts(d, dilatefac, 1e3*(actualz-beginheight)), startdata.data,...
+        'UniformOutput', false);
+else
+    dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...
+        'UniformOutput', false);
+end
+            
 
 dilated.data = dilateddata;
 dilated.date = datetime;
