@@ -22,7 +22,7 @@ function varargout = inspect_STORMdata(varargin)
 
 % Edit the above text to modify the response to help inspect_STORMdata
 
-% Last Modified by GUIDE v2.5 16-Jul-2018 17:19:02
+% Last Modified by GUIDE v2.5 25-Jul-2018 16:14:33
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -132,6 +132,8 @@ else
     end
 end
 
+handles.auto_color = get(handles.pts_autocolor_checkbox, 'Value');
+
 guidata(hObject, handles);
 
 function varargout = inspect_STORMdata_OutputFcn(~, ~, handles)
@@ -220,6 +222,24 @@ set(handles.lastmovie_edit, 'String', lastmov)
 set(handles.firstframe_edit, 'String', firstframe)
 set(handles.lastframe_edit, 'String', lastframe)
 
+function update_caxis(handles)
+ax = handles.r_axes;
+
+if handles.auto_color
+    caxis(ax, 'auto');
+    [cx] = caxis(ax);
+    set(handles.pts_cmin_edit, 'String', num2str(cx(1)));
+    set(handles.pts_cmax_edit, 'String', num2str(cx(2)));
+else
+    cmin = str2double(get(handles.pts_cmin_edit, 'String'));
+    cmax = str2double(get(handles.pts_cmax_edit, 'String'));
+    cmax = max(cmax, cmin + 1); 
+    set(handles.pts_cmax_edit, 'String', num2str(cmax));
+
+    caxis(ax, [cmin, cmax]);
+end
+
+
 % This is awful. Rewrite from scratch? Making all the uielements
 % call the same callback was a mistake.
 function reconstruct_Callback(hObject, ~, handles) %#ok<*DEFNU>
@@ -236,10 +256,6 @@ switch hObject.Tag
     case {'overlay_ch1_checkbox', 'overlay_ch2_checkbox', 'color_by_menu'}
         newptsdata = true;
         redrawpoints = true;
-    case {'pts_cmin_edit', 'pts_cmax_edit'}
-        newptscmin = str2double(get(handles.pts_cmin_edit, 'String'));
-        newptscmax = str2double(get(handles.pts_cmax_edit, 'String'));
-        newptscolors = true;
 end
 
 % newptsdata should only be true if at least one of the checkboxes is true
@@ -355,9 +371,7 @@ if redrawpoints
     end
 end
 
-if newptscolors && ~isempty(handles.pts)
-    caxis(handles.r_axes, [newptscmin, newptscmax]);
-end
+update_caxis(handles);
 
 guidata(hObject, handles);
 
@@ -382,6 +396,9 @@ if isempty(handles.im)
 else
     set(handles.im, 'CData', Itoshow)
 end
+
+handles.Itoshow = Itoshow;
+guidata(handles.figure1, handles);
 
 function save_button_Callback(~, ~, handles)
 imwrite(handles.Itoshow, 'img.tif');
@@ -431,3 +448,20 @@ new_istruct_field_str(hObject,handles,'color', 2);
 
 function reconstruct_checkbox_Callback(~, ~, handles)
 redraw_image(handles);
+
+function pts_autocolor_checkbox_Callback(hObject, eventdata, handles)
+handles.auto_color = get(hObject, 'Value');
+guidata(hObject, handles);
+update_caxis(handles);
+
+function pts_cmin_edit_Callback(hObject, eventdata, handles)
+set(handles.pts_autocolor_checkbox, 'Value', 0);
+handles.auto_color = 0;
+guidata(hObject, handles);
+update_caxis(handles);
+
+function pts_cmax_edit_Callback(hObject, eventdata, handles)
+set(handles.pts_autocolor_checkbox, 'Value', 0);
+handles.auto_color = 0;
+guidata(hObject, handles);
+update_caxis(handles);

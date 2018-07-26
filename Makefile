@@ -1,4 +1,5 @@
 all:
 
 deploy:
-	rsync -rvu --delete src/ /lipid/group/global\ mfiles/STORManalysis/
+	rsync -rvu src/ /lipid/group/global\ mfiles/STORManalysis/
+	rsync -rvun --delete src/ /lipid/group/global\ mfiles/STORManalysis/
