@@ -355,12 +355,15 @@ guidata(hObject, handles);
 
 function new_button_Callback(hObject, ~, handles)
 % Ask: single or dual
-answer = questdlg('Single or dualview?', 'channels', 'Single', 'Dual', 'Dual');
+answer = questdlg('Single or dualview?', 'channels', 'Single', 'Dual', 'DoubleHelix', 'Dual');
+%questdlg('Single or dualview?', 'channels', 'Single', 'Dual', 'Dual', 'Double Helix');
 switch answer
     case 'Single'
         handles.nchannels = 1;
     case 'Dual'
         handles.nchannels = 2;
+    case 'DoubleHelix'
+        handles.nchannels = 3; % a flag for now
 end
 
 record_fname = ask_for_record_fname('New record...');

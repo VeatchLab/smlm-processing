@@ -48,4 +48,7 @@ if nchan == 1
     record.SPspecs = default_specs_singleview(SP_args{:});
 elseif nchan == 2
     record.SPspecs = default_specs_dualview(SP_args{:});
+elseif nchan == 3
+    record.SPspecs = default_specs_spline([], SP_args{:});
+    record.driftspecs.correctz = 1;
 end
