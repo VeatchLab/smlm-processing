@@ -1,8 +1,12 @@
-function options = drift_default(units)
+function options = drift_default(units, fit_type)
 
 fac = 1;
 if nargin < 1
     units = 'px';
+end
+
+if nargin < 2
+    fit_type = 'gaussianPSF';
 end
 
 switch units
@@ -26,7 +30,12 @@ options.sigma_startpt = 50*fac;
 options.update_reference_flag= true;
 options.include_diagnostics = true;
 options.units = units;
-options.correctz = 0;
+switch fit_type
+    case 'gaussianPSF'
+        options.correctz = 0;
+    case 'spline'
+        options.correctz = 1;
+end
 %options.align_to_image_flag= 0;
 %options.align_to_TIR_flag= 0;
 %options.display_results_flag= 1;
