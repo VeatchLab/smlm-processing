@@ -19,7 +19,6 @@ if isfield(shift_info, 'zfit')  % avoiding the if statement in the big loop.  ma
         data(i).y = data(i).y - dy(i);
         data(i).z = data(i).z - dz(i);
     end
-    disp('here')
 else
     
     %

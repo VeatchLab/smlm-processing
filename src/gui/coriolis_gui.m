@@ -599,11 +599,13 @@ final.date = datetime;
 final.produced_by = 'compute_drift';
 final.units = 'nm';
 final.drift_info = drift_info;
-
 handles.final = final;
-
 guidata(hObject, handles);
 set(handles.final_stat, 'String', {'done', char(final.date)});
+
+
+
+
 
 function apply_drift_button_Callback(hObject, eventdata, handles)
 % check prereqs
