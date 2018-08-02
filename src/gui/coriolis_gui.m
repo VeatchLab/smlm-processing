@@ -482,7 +482,10 @@ end
 
 if strcmp(SPspecs.fit_method, 'spline')
     load(SPspecs.spline_calibration_fname, 'actualz', 'beginheight');
-    dilateddata = cellfun(@(d) dilatepts(d, dilatefac, 1e3*(actualz-beginheight)), startdata.data,...
+    if actualz(1)>0
+        actualz = actualz-beginheight;
+    end
+    dilateddata = cellfun(@(d) dilatepts(d, dilatefac, 1e3*actualz), startdata.data,...
         'UniformOutput', false);
 else
     dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...

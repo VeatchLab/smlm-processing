@@ -1,5 +1,7 @@
-function [coeffs, fitinfo] = find_tilt_correction(datastruct, regions)
+function [coeffs, fitinfo] = find_tilt_correction(datastruct, regions, how)
 
+
+if nargin <3, how='poly11'; end
 
 Is = imagestruct_default(datastruct);
 
@@ -14,7 +16,7 @@ end
 
 
 pts = data_from_imagestructs(Is);
-fitinfo = fit([pts(:, 1), pts(:, 2)],pts(:, 3), 'poly11');
+fitinfo = fit([pts(:, 1), pts(:, 2)],pts(:, 3), how);
 coeffs = coeffvalues(fitinfo);
 plot(fitinfo, [pts(:, 1), pts(:, 2)],pts(:, 3))
 

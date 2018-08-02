@@ -29,7 +29,7 @@ switch fit_method
         options.units = units;
     case 'spline'
         options.maxr = 200*fac;
-        options.range = [];
+        options.range = [.1 .9 .1 .9 .2 .8];
         options.binsize = 25*fac;
         options.niter = 5;
         options.units = units;
