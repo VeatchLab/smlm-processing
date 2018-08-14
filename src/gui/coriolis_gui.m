@@ -481,7 +481,10 @@ end
 
 
 if strcmp(SPspecs.fit_method, 'spline')
-    load(SPspecs.spline_calibration_fname, 'actualz', 'beginheight');
+    spline_cal = load(SPspecs.spline_calibration_fname, 'actualz', 'beginheight');
+    actualz = spline_cal.actualz;
+    beginheight = spline_cal.beginheight;
+
     if actualz(1)>0
         actualz = actualz-beginheight;
     end
@@ -774,7 +777,7 @@ function grouping_button_Callback(hObject, eventdata, handles)
 final = getdataset(handles, 'final');
 record = handles.record;
 
-if isfield(record, 'resolution_specs')
+if isfield(record, 'grouping_specs')
     options = record.grouping_specs;
 else
     options = grouping_default('nm');
