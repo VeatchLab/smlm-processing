@@ -128,7 +128,7 @@ if exist(handles.record_fname, 'file')
     handles.nchannels = numel(record.SPspecs);
 else
     % This is here because load_all is called after a new record_fname is chosen
-    record = SP_record_default(handles.nchannels);
+    record = SP_record_default(handles.nchannels, handles.fit_method);
     record = validate_record(record, record_version);
 end
 
@@ -355,12 +355,18 @@ guidata(hObject, handles);
 
 function new_button_Callback(hObject, ~, handles)
 % Ask: single or dual
-answer = questdlg('Single or dualview?', 'channels', 'Single', 'Dual', 'Dual');
+answer = questdlg('Single or dualview?', 'channels', 'Single', 'Dual', 'DoubleHelix', 'Dual');
+%questdlg('Single or dualview?', 'channels', 'Single', 'Dual', 'Dual', 'Double Helix');
 switch answer
     case 'Single'
         handles.nchannels = 1;
+        handles.fit_method = 'gaussianPSF';
     case 'Dual'
         handles.nchannels = 2;
+        handles.fit_method = 'gaussianPSF';
+    case 'DoubleHelix'
+        handles.nchannels = 1; 
+        handles.fit_method = 'spline';
 end
 
 record_fname = ask_for_record_fname('New record...');
@@ -461,7 +467,8 @@ end
 set(handles.dilated_stat, 'String', 'Converting to nm ...');
 drawnow;
 
-dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %to nm
+dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %pixels to nm
+
 
 % do to different datasets depending on number of channels
 if isempty(handles.record.tform_channel)
@@ -471,8 +478,20 @@ else
 end
 
 % apply the dilation to each channel
-dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...
-                'UniformOutput', false);
+
+
+if strcmp(SPspecs.fit_method, 'spline')
+    load(SPspecs.spline_calibration_fname, 'actualz', 'beginheight');
+    if actualz(1)>0
+        actualz = actualz-beginheight;
+    end
+    dilateddata = cellfun(@(d) dilatepts(d, dilatefac, 1e3*actualz), startdata.data,...
+        'UniformOutput', false);
+else
+    dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...
+        'UniformOutput', false);
+end
+            
 
 dilated.data = dilateddata;
 dilated.date = datetime;
@@ -583,11 +602,13 @@ final.date = datetime;
 final.produced_by = 'compute_drift';
 final.units = 'nm';
 final.drift_info = drift_info;
-
 handles.final = final;
-
 guidata(hObject, handles);
 set(handles.final_stat, 'String', {'done', char(final.date)});
+
+
+
+
 
 function apply_drift_button_Callback(hObject, eventdata, handles)
 % check prereqs
@@ -715,22 +736,29 @@ drawnow
 final = getdataset(handles, 'final');
 data = final.data;
 record = handles.record;
-if isfield(record, 'resolution_specs')
-    options = record.resolution_specs;
+if isfield(record, 'res_specs')
+    options = record.res_specs;
 else
-    options = resolution_default('nm');
-    handles.record.resolution_specs = options;
+    options = resolution_default('nm', record.SPspecs.fit_method);
+    record.res_specs = options;
+    disp('here')
 end
     
+
 st = 'Done: ';
 for i=1:length(data)
-    tic
-    [res{i} info{i}] = calc_resolution(data{i}, options);%10, 5, 'sequential', 250);
-    toc
-    st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
-    figure
-    plot(info{i}.F, info{i}.rc(2:end), info{i}.c(2:end))
-    title(['chan' num2str(i) '; ' num2str(res{i}, 2) final.units]);
+    switch record.SPspecs.fit_method
+        case 'gaussianPSF'
+            [res{i} info{i}] = calc_resolution(data{i}, options);%10, 5, 'sequential', 250);
+            st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
+            figure
+            plot(info{i}.F, info{i}.rc(2:end), info{i}.c(2:end))
+            title(['chan' num2str(i) '; ' num2str(res{i}, 2) final.units]);
+        case 'spline'
+             [res{i} info{i}] = calc_resolution_3D(data{i}, options);
+             st = [st 'sxy=' num2str(res{i}(1), 2) final.units ', ' ...
+                 'sz=' num2str(res{i}(2), 2) final.units];
+    end
 end
 
 record.resolution = res;
@@ -760,7 +788,7 @@ switch how
     case 'auto'
         if ~isempty(record.resolution)
             res = record.resolution;            
-            groupr = cellfun(@(r) options.multfac*r, res, 'UniformOutput', false);
+            groupr = cellfun(@(r) options.multfac*r(1), res, 'UniformOutput', false);
         else
             groupr = num2cell(30*ones(size(record.SPspecs)));
         end

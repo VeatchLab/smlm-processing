@@ -11,10 +11,22 @@ end
 dx = shift_info.xfit;
 dy = shift_info.yfit;
 
-%
-for i = 1:numel(data)
-    data(i).x = data(i).x - dx(i);
-    data(i).y = data(i).y - dy(i);
+
+if isfield(shift_info, 'zfit')  % avoiding the if statement in the big loop.  maybe not needed?
+    dz = shift_info.zfit;
+    for i = 1:numel(data)
+        data(i).x = data(i).x - dx(i);
+        data(i).y = data(i).y - dy(i);
+        data(i).z = data(i).z - dz(i);
+    end
+else
+    
+    %
+    for i = 1:numel(data)
+        data(i).x = data(i).x - dx(i);
+        data(i).y = data(i).y - dy(i);
+    end
+    
 end
 
 
