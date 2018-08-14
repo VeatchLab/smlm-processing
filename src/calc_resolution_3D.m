@@ -50,6 +50,12 @@ if numel(yedges)/2~=round(numel(yedges)/2)
     yedges = miny:bin:maxy+bin;
 end
 
+[r,w] = unix('free | grep Mem');
+m = sscanf(w(5:end), '%d');
+mfree = m(3)/16; % available memory divided by size of double
+if numel(zedges)*numel(xedges)*numel(yedges) > mfree
+    error('calc_resolution_3D: not enough memory for the given bin size');
+end
 
 pts = [x' y' z'];
 Iall = histcn(pts, xedges, yedges, zedges);
