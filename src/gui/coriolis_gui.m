@@ -781,7 +781,7 @@ if isfield(record, 'grouping_specs')
     options = record.grouping_specs;
 else
     options = grouping_default('nm');
-    handles.record.grouping_specs = options;
+    record.grouping_specs = options;
 end
 
 
@@ -812,6 +812,7 @@ grouped.units = 'nm';
 grouped.groupr = groupr;
 
 handles.grouped = grouped;
+handles.record = record;
 guidata(hObject, handles);
 
 handles.grouped_stat.String = 'Grouping complete';
