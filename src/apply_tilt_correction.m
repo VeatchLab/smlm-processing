@@ -8,6 +8,7 @@ if size(data,2) ~= numel(data)
     reshaped = true;
 end
 
+%TODO: this only rotates z, but x and y should also change (if tilt is non-trivial)
 if isnumeric(coeffs)
     for i = 1:numel(data)
         data(i).z = data(i).z-coeffs(1)-coeffs(2)*data(i).x -coeffs(3)*data(i).y;
