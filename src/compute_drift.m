@@ -13,6 +13,7 @@ nframes = numel(data);
 
 psize = specs.psize_for_alignment;
 rmax1 = specs.rmax_shift;
+rmaxpx1 = round(rmax1/psize);
 rmax = specs.rmax;
 sigma_startpt = specs.sigma_startpt/psize;
 update = specs.update_reference_flag;
@@ -48,12 +49,6 @@ end
 % helper function for getting data
 getnthdata = @(n) data(firstframe(n):lastframe(n));
 
-% useful numbers for initial fit
-rmaxpx1 = ceil(rmax1/psize);
-npx1 = 2*rmaxpx1 + 1;
-pxrange1 = (-rmaxpx1):rmaxpx1;
-[x1,y1] = meshgrid(1:npx1, 1:npx1);
-
 % useful numbers for second fit
 rmaxpx= ceil(rmax/psize);
 npx = 2*rmaxpx + 1;
@@ -65,18 +60,11 @@ fitgauss = fittype(...
     @(A,s,x0,y0,c,x,y) A*exp(-((x0-x).^2 + (y0-y).^2)/(2*s.^2)) + c,...
         'coefficients', {'A', 's', 'x0', 'y0','c'},...
         'indep', {'x', 'y'}, 'dep', 'z');
-    
-% Fit options for first fit, using L-M
-% fgo1 = fitoptions(fitgauss);
-% fgo1.Algorithm = 'Levenberg-Marquardt';
 
 % Fit options for more refined fit, using Trust-Region algorithm
 fgo = fitoptions(fitgauss);
 fgo.Lower = [1,0,1,1,0];
 fgo.Upper = [Inf,Inf,npx,npx,Inf];
-
-fgo1 = fgo;
-fgo1.Upper = [Inf, Inf, npx1, npx1, Inf];
 
 % Compute xcors, and resulting offsets
 refdata = getnthdata(1);
@@ -97,6 +85,9 @@ while npoints(refbin) == 0
     end
 end
 
+
+dx_last = 0;
+dy_last = 0;
 for i = (refbin + 1):nTimeBin
     thisdata  = getnthdata(i);
 
@@ -107,53 +98,157 @@ for i = (refbin + 1):nTimeBin
     end
         
     C = xcor_dirty(refdata, thisdata, psize, rmax);
-    
-    % First fit, large box centered on no shift
-    smallinds1 = round(size(C,1)/2) + pxrange1;
-    smallinds2 = round(size(C,2)/2) + pxrange1;
 
+    centerx = round((size(C,2) + 1)/2);
+    centery = round((size(C,1) + 1)/2);
+    
+    Cstd = std(C(:));
+    Cmean = mean(C(:));
+    Cmax = max(C(:));
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Find a starting point. This is not trivial. I've tried various
+    % strategies:
+    % - two rounds of fitting. One starting at origin, the next starting at
+    % the (fitted) peak of the first. This works reasonably well, until you
+    % get near the edge of the first fitting region
+    %
+    % - just take the max of C. This can cause problems in undersampled
+    % data, because there are sometimes outliers far from the origin
+    %
+    % - the closest local maximum above a threshold. I don't have a good
+    % way to determine a good threshold, so only works for some datasets
+    %
+    % - linear extrapolation from previous two points. This is probably
+    % good as long as there are a reasonably large number of points.
+    %
+    % - closest local maximum to this linear extrapolation. Same threshold
+    % problem
+    
+    % 1st order prediction for next peak
+    x_pred = centerx - (xshift(i-1) + dx_last)/psize;
+    y_pred = centery - (yshift(i-1) + dy_last)/psize;
+
+    % local maxima greater than Cmean + (Cmax - Cmean)/2
+    [y_max, x_max, vals_max] = find(maskedRegionalMax(C, C > (Cmean + (Cmax - Cmean)*.75)));
+    
+    %how many are within rmaxpx1 of pred
+    r2 = (x_max - x_pred).^2 + (y_max - y_pred).^2;
+    in_disc = r2 < rmaxpx1^2;
+    
+    if sum(in_disc) == 1 % we're golden, take this as center
+        x_start = x_max(in_disc);
+        y_start = y_max(in_disc);
+    elseif sum(in_disc) > 1
+        fprintf('more than one local max for time bin %d\n',i);
+        nid = sum(in_disc);
+        id_inds = find(in_disc);
+        ind = find(vals_max == max(vals_max(in_disc)));
+        fprintf('\tx_max\tx_pred\ty_max\ty_pred\tval\n');
+        for j =1:nid
+            if vals_max(id_inds(j)) == max(vals_max(in_disc))
+                fprintf('  *\t%d\t%d\t%d\t%d\t%.2e\n', x_max(id_inds(j)), round(x_pred),...
+                    y_max(id_inds(j)), round(y_pred), vals_max(id_inds(j)));
+            else
+                fprintf('   \t%d\t%d\t%d\t%d\t%.2e\n', x_max(id_inds(j)), round(x_pred),...
+                    y_max(id_inds(j)), round(y_pred), vals_max(id_inds(j)));
+            end
+        end
+        %disp([x_max(in_disc), x_pred*ones(nid,1), y_max(in_disc), y_pred*ones(nid,1), vals_max(in_disc)])
+        x_start = x_max(ind(1));
+        y_start = y_max(ind(1));
+    else % no luck
+        
+        fgo1 = fgo;
+        pxrange1 = -rmaxpx1:rmaxpx1;
+        smallinds1 = round(y_pred) + pxrange1;
+        smallinds2 = round(x_pred) + pxrange1;
+        
+        npx1 = 2*rmaxpx1 + 1;
+        [x1,y1] = meshgrid(1:npx1, 1:npx1);
+        Csm = C(smallinds1, smallinds2);
+        
+        Cmin = min(Csm(:));
+        fgo1.StartPoint = [Cmax - Cmin, sigma_startpt*10, ...
+            rmaxpx1+1, rmaxpx1+1, Cmean];
+        fgo1.Lower = [0,2,1,1,0];
+        fgo1.Upper = [Inf,Inf,npx1,npx1,Inf];
+        
+        F1 = fit([x1(:), y1(:)], Csm(:), fitgauss, fgo1);
+        
+        x_start = round(F1.x0 - rmaxpx1 - 1 + round(x_pred));
+        y_start = round(F1.y0 - rmaxpx1 - 1 + round(y_pred));
+        warning('no local max, resorting to a pre-fit');
+        fprintf('time bin %d\n', i);
+        fprintf('\tx_start\tx_pred\ty_start\ty_pred\tval\tmax\n');
+        fprintf('  *\t%d\t%d\t%d\t%d\t%.2e\t%.2e\n', x_start, round(x_pred),...
+                   y_start, round(y_pred), C(y_start,x_start), Cmax);
+    end
+    x_shift_i = x_start - centerx;
+    y_shift_i = y_start - centery;
+        
+    
+%     (Cmax - Cmean)/Cstd      % 
+%     
+%     % use 50*Cstd + Cmean as starting pt
+%     [y_max, x_max] = find(maskedRegionalMax(C, C > (Cmean + 20*Cstd)));
+%     nmax = numel(x_max)
+%     
+%     r2 = (x_max - x_pred).^2 + (y_max - y_pred).^2;
+%     
+%     %how many are within rmaxpx1 of center
+%     n_max_in_disc = sum(r2 < rmaxpx1^2);
+%     
+%     if n_max_in_disc == 1
+%         ind = find(r2 == min(r2));
+%         x_max = x_max(ind);
+%         y_max = y_max(ind);
+%     elseif n_max_in_disc > 1
+%         warning('More than one reasonable local max: proceed with caution');
+% %         keyboard
+%         ind = find(r2 == min(r2));
+%         x_max = x_max(ind(1));
+%         y_max = y_max(ind(1));
+%     else
+%         warning('I couldn''t find a local max to fit to, using 1st order prediction');
+%         x_max = round(x_pred);
+%         y_max = round(y_pred);
+%     end
+%     
+% %     [y_max,x_max] = find(C == Cmax);
+%     
+% %     y_max = y_max(1);
+% %     x_max = x_max(1);
+%     
+%     x_shift_i = x_max - centerx;
+%     y_shift_i = y_max - centery;
+%     
+%     outofframe = abs(x_shift_i) > rmaxpx1 || abs(y_shift_i) > rmaxpx1;
+%     if outofframe
+%         warning('I couldn''t find a local max to fit to, using 1st order prediction');
+%         x_max = round(x_pred);
+%         y_max = round(y_pred);
+%         x_shift_i = x_max - centerx;
+%         y_shift_i = y_max - centery;
+%     end
+
+    smallinds1 = y_start + pxrange;
+    smallinds2 = x_start + pxrange;
     Csm = C(smallinds1, smallinds2);
+
     Cmin = min(Csm(:));
-    Cmean = mean(Csm(:));
-    cx = mean((1:npx1).* (mean(Csm, 1) - Cmin))/(Cmean-Cmin);
-    cy = mean((1:npx1).* (mean(Csm, 2)' - Cmin))/(Cmean-Cmin);
+    fgo.StartPoint = [Cmax - Cmin, sigma_startpt, ...
+        rmaxpx+1, rmaxpx+1, Cmean];
 
-    fgo1.StartPoint = [Csm(round(cy),round(cx)) - Cmin, sigma_startpt,...
-                            cx, cy, Cmin];
-    F1 = fit([x1(:), y1(:)], Csm(:), fitgauss,fgo1);
+    F = fit([x(:), y(:)], Csm(:), fitgauss, fgo);
+
+    % Shifts, in the correct units
+    xshift(i) = -(F.x0 - rmaxpx - 1 + x_shift_i)*psize;
+    yshift(i) = -(F.y0 - rmaxpx - 1 + y_shift_i)*psize;
+
+    dx_last = xshift(i) - xshift(i-1);
+    dy_last = yshift(i) - yshift(i-1);
     
-    outofframe = F1.x0 < rmaxpx || F1.x0 > npx1 - rmaxpx ||...
-                        F1.y0 < rmaxpx || F1.y0 > npx1 - rmaxpx;
-    % Fail if the first fit was off the large fitting frame
-    % Not sure if this is the best way to go yet, we'll see how
-    % often this happens
-    if outofframe
-        error(['First fit gave a result bigger than rmax_shift.\n'...
-            'Try changing the value?']);
-    end
-        
-    if F1.s < sigma_startpt % First fit is good enough
-        xshift(i) = (F1.x0 - rmaxpx1 - 1)*psize;
-        yshift(i) = (F1.y0 - rmaxpx1 - 1)*psize;
-
-        finalfit = F1; %for extracting parameters for diag
-    else
-        goodinitial(i) = false;
-        smallinds1 = round(F1.y0) + pxrange;
-        smallinds2 = round(F1.x0) + pxrange;
-        
-        fgo.StartPoint = [Csm(round(F1.y0), round(F1.x0)) - Cmin, sigma_startpt, ...
-            rmaxpx+1, rmaxpx+1, Cmin];
-
-        Csm = Csm(smallinds1, smallinds2);
-        F = fit([x(:), y(:)], Csm(:), fitgauss, fgo);
-        
-        % I think the - sign is right
-        xshift(i) = -(F.x0 - rmaxpx - 1 + round(F1.x0) - rmaxpx1 - 1)*psize;
-        yshift(i) = -(F.y0 - rmaxpx - 1 + round(F1.y0) - rmaxpx1 - 1)*psize;
-
-        finalfit = F; %for extracting parameters for diag
-    end
+    finalfit = F; %for extracting parameters for diag
     
     if specs.correctz
         zshift(i) = mean([thisdata.z])-refmeanz;
@@ -162,8 +257,8 @@ for i = (refbin + 1):nTimeBin
     % extract parameters
     CI = confint(finalfit, .34);
     d = .5*(diff(CI, 1)); % standard errors
-    dxshift(i) = d(3);
-    dyshift(i) = d(4);
+    dxshift(i) = d(3)*psize;
+    dyshift(i) = d(4)*psize;
     
     amp(i) = finalfit.A;
     width(i) = finalfit.s*psize;
