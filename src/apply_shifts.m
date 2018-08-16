@@ -5,6 +5,8 @@ if size(data,2) ~= numel(data)
     oldsizet = size(data');
     data = reshape(data', 1, numel(data));
     reshaped = true;
+else
+    reshaped = false;
 end
 
 %
