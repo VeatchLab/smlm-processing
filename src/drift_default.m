@@ -1,5 +1,13 @@
 function options = drift_default(units, fit_type)
 
+if isstruct(units) % they passed in data
+    data = units.data;
+    units = units.units;
+    hasdata = true;
+else
+    hasdata = false;
+end
+
 fac = 1;
 if nargin < 1
     units = 'px';
@@ -20,8 +28,13 @@ switch units
 end
         
       
-options.npoints_for_alignment= 10;
-options.nframes_per_alignment= 500;
+if hasdata
+    options.npoints_for_alignment = size(data{1},1);
+    options.nframes_per_alignment = size(data{1},2);
+else
+    options.npoints_for_alignment= 10;
+    options.nframes_per_alignment= 500;
+end
 options.interp_method= 'linear';
 options.psize_for_alignment= 30*fac;
 options.rmax_shift = 2000*fac;
