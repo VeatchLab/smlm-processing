@@ -22,7 +22,7 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 12-Jul-2018 12:13:46
+% Last Modified by GUIDE v2.5 17-Aug-2018 15:18:59
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -480,7 +480,7 @@ end
 % apply the dilation to each channel
 
 
-if strcmp(SPspecs.fit_method, 'spline')
+if strcmp(SPspecs(1).fit_method, 'spline')
     spline_cal = load(SPspecs.spline_calibration_fname, 'actualz', 'beginheight');
     actualz = spline_cal.actualz;
     beginheight = spline_cal.beginheight;
@@ -554,7 +554,7 @@ handles.culled = culled;
 guidata(hObject, handles);
 set(handles.culled_stat, 'String', {'done ' char(culled.date)});
 
-function driftspec_button_Callback(hObject, ~, handles)
+function edit_driftspec_button_Callback(hObject, ~, handles)
 %error('not implemented');
 handles.record.driftspecs = driftspecs_gui(handles.record.driftspecs);
 guidata(hObject,handles);
@@ -596,6 +596,12 @@ end
 
 [final.data{1}, drift_info] = compute_drift(culled.data{1}, timing, driftspecs);
 handles.record.drift_info = drift_info;
+
+figure
+errorbar(drift_info.xshift, drift_info.yshift, ...
+    -drift_info.dyshift, drift_info.dyshift, ...
+    -drift_info.dxshift, drift_info.dxshift);
+
 
 set(handles.apply_drift_button, 'Enable', 'on');
 
@@ -752,7 +758,7 @@ end
 
 st = 'Done: ';
 for i=1:length(data)
-    switch record.SPspecs.fit_method
+    switch record.SPspecs(i).fit_method
         case 'gaussianPSF'
             [res{i} info{i}] = calc_resolution(data{i}, options);%10, 5, 'sequential', 250);
             st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
@@ -822,3 +828,5 @@ drawnow
 
 
 function grouping_specs_button_Callback(hObject, eventdata, handles)
+
+
