@@ -555,7 +555,9 @@ guidata(hObject, handles);
 set(handles.culled_stat, 'String', {'done ' char(culled.date)});
 
 function driftspec_button_Callback(hObject, ~, handles)
-error('not implemented');
+%error('not implemented');
+handles.record.driftspecs = driftspecs_gui(handles.record.driftspecs);
+guidata(hObject,handles);
 
 function compute_drift_button_Callback(hObject, ~, handles)
 % check prereqs
