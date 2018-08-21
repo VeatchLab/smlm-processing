@@ -75,7 +75,7 @@ handles.to_return = nargout;
 guidata(hObject, handles);
 
 if nargout > 0
-    uiwait(handles.figure1);'gaussianPSF'
+    uiwait(handles.figure1);
     handles = guidata(hObject);
     
     varargout{1} = handles.output;
@@ -110,7 +110,7 @@ set(handles.units_menu, 'Value', find(strcmp(units_options, s.units)));
 
 function specs = update_specs_from_fields(handles)
 
-s.channel = round(str2double(get(handles.drift_channel_edit)));
+s.channel = round(str2double(get(handles.drift_channel_edit, 'String')));
 
 s.npoints_for_alignment = round(str2double(get(handles.npoints_for_alignment_edit, 'String')));
 s.nframes_per_alignment = round(str2double(get(handles.nframes_per_alignment_edit, 'String')));
