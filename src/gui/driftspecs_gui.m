@@ -22,7 +22,7 @@ function varargout = driftspecs_gui(varargin)
 
 % Edit the above text to modify the response to help driftspecs_gui
 
-% Last Modified by GUIDE v2.5 17-Aug-2018 12:48:41
+% Last Modified by GUIDE v2.5 21-Aug-2018 09:57:54
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -49,6 +49,17 @@ function driftspecs_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.to_return = nargout;
 if numel(varargin) > 0
     handles.specs = varargin{1};
+else
+    handles.specs = drift_default('nm', 'gaussianPSF');
+end
+
+% Fill in missing values from default
+d = drift_default(handles.specs.units, 'gaussianPSF');
+f = fieldnames(d);
+for i = 1:numel(f)
+    if ~isfield(handles.specs, f{i})
+        handles.specs.(f{i}) = d.(f{i});
+    end
 end
 
 update_fields_from_specs(handles);
@@ -64,7 +75,7 @@ handles.to_return = nargout;
 guidata(hObject, handles);
 
 if nargout > 0
-    uiwait(handles.figure1);
+    uiwait(handles.figure1);'gaussianPSF'
     handles = guidata(hObject);
     
     varargout{1} = handles.output;
@@ -74,6 +85,8 @@ end
 
 function update_fields_from_specs(handles)
 s = handles.specs;
+
+set(handles.drift_channel_edit, 'String', num2str(s.channel));
 
 set(handles.npoints_for_alignment_edit, 'String', num2str(s.npoints_for_alignment));
 set(handles.nframes_per_alignment_edit, 'String', num2str(s.nframes_per_alignment));
@@ -96,6 +109,8 @@ set(handles.units_menu, 'String', units_options);
 set(handles.units_menu, 'Value', find(strcmp(units_options, s.units)));
 
 function specs = update_specs_from_fields(handles)
+
+s.channel = round(str2double(get(handles.drift_channel_edit)));
 
 s.npoints_for_alignment = round(str2double(get(handles.npoints_for_alignment_edit, 'String')));
 s.nframes_per_alignment = round(str2double(get(handles.nframes_per_alignment_edit, 'String')));
@@ -356,3 +371,13 @@ uiresume(handles.figure1);
 if ~handles.to_return
     delete(handles.figure1)
 end
+
+
+
+function drift_channel_edit_Callback(hObject, eventdata, handles)
+% hObject    handle to drift_channel_edit (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of drift_channel_edit as text
+%        str2double(get(hObject,'String')) returns contents of drift_channel_edit as a double

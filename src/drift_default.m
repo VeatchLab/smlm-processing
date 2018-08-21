@@ -27,6 +27,7 @@ switch units
         fac = 1e-3;
 end
         
+options.channel = 1;
       
 if hasdata
     options.npoints_for_alignment = size(data{1},1);

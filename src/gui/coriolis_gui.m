@@ -594,7 +594,9 @@ for i = 1:size(culled.data{1},1)
                                                 mdata(i).timestamp;
 end
 
-[final.data{1}, drift_info] = compute_drift(culled.data{1}, timing, driftspecs);
+cull_channel = driftspecs.channel;
+
+[final.data{cull_channel}, drift_info] = compute_drift(culled.data{cull_channel}, timing, driftspecs);
 handles.record.drift_info = drift_info;
 
 figure
@@ -606,7 +608,9 @@ errorbar(drift_info.xshift, drift_info.yshift, ...
 set(handles.apply_drift_button, 'Enable', 'on');
 
 if handles.nchannels > 1
-    [final.data{2}] = apply_shifts(culled.data{2}, drift_info);
+    for i=find((1:handles.nchannels) ~= cull_channel)
+        [final.data{i}] = apply_shifts(culled.data{i}, drift_info);
+    end
 end
 
 final.date = datetime;
