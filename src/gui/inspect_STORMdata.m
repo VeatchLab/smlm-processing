@@ -412,7 +412,8 @@ if isempty(handles.im)
     handles.im = imshow(Itoshow, handles.istruct.imageref, ...
                 'Parent', handles.r_axes, 'Border', 'tight');
 else
-    set(handles.im, 'CData', Itoshow)
+    set(handles.im, 'CData', Itoshow, 'XData', handles.istruct.imageref.XWorldLimits,...
+        'YData', handles.istruct.imageref.YWorldLimits);
 end
 
 handles.Itoshow = Itoshow;
