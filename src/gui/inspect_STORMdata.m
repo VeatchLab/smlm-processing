@@ -22,7 +22,7 @@ function varargout = inspect_STORMdata(varargin)
 
 % Edit the above text to modify the response to help inspect_STORMdata
 
-% Last Modified by GUIDE v2.5 25-Jul-2018 16:14:33
+% Last Modified by GUIDE v2.5 26-Sep-2018 13:22:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -105,20 +105,19 @@ h = zoom(r_axes);
 h.Enable = 'on';
 h.ActionPreCallback = @(obj, evd) pre_zoom_callback(evd.Axes);
 h.ActionPostCallback = @(obj, evd) post_zoom_callback(evd.Axes, handles.istruct.units);
-post_zoom_callback(r_axes, handles.istruct.units);
 axis(r_axes, 'equal','off');
 handles.pts = [];
 handles.cbar = [];
 
 % axes for npoints histograms
 handles.npts1_axes = axes('Parent', handles.nperframe_panel, 'Units', 'Normalized',...
-                'Position', [0.2, 0.1, .75, .35]);
+                'OuterPosition', [0, 0, 1, .5]);
 npts1 = arrayfun(@(s) numel(s.x), handles.data{1});
 histogram(handles.npts1_axes, npts1(:));
 
 % axes for vals histogram
 handles.vals_axes = axes('Parent', handles.vals_panel, 'Units', 'Normalized', ...
-                'Position', [0.2 0.1 .75 .8]);
+                'OuterPosition', [0 0 1 1]);
 handles.vals_hist = [];
 
 if handles.nchannel > 1
@@ -126,7 +125,7 @@ if handles.nchannel > 1
     set(handles.cmax2_edit, 'String', num2str(handles.istruct.cmax(2)));
     set(handles.color2_edit, 'String', handles.istruct.color(2));
     handles.npts2_axes = axes('Parent', handles.nperframe_panel, 'Units', 'Normalized',...
-                    'Position', [0.2, 0.55, .75, .35]);
+                    'OuterPosition', [0, 0.5, 1, .5]);
     npts2 = arrayfun(@(s) numel(s.x), handles.data{2});
     histogram(handles.npts2_axes, npts2(:));
 else
@@ -141,6 +140,10 @@ end
 handles.auto_color = get(handles.pts_autocolor_checkbox, 'Value');
 
 guidata(hObject, handles);
+
+% put initial scale bar
+% this has to be done after handles are set
+post_zoom_callback(r_axes, handles.istruct.units);
 
 function varargout = inspect_STORMdata_OutputFcn(~, ~, handles)
 varargout{1} = handles.output;
@@ -184,6 +187,13 @@ bottom = top + newlim/50;
 
 patch(ax, [left, right, right, left], [bottom, bottom, top, top], 'w');
 text(ax, left, (bottom + top)/2, labeltext, 'Interpreter', 'tex');
+
+handles = guidata(ax);
+if ~isempty(handles.vals_hist) && get(handles.update_hist_box, 'Value')
+    inds = handles.x > newxlim(1) & handles.x < newxlim(2) & ...
+            handles.y > newylim(1) & handles.y < newylim(2);
+    handles.vals_hist = histogram(handles.vals_axes, handles.c(inds));
+end
 
 function [firstmov, lastmov, firstframe, lastframe] = check_datarange(handles)
 firstmov = round(str2double(get(handles.firstmovie_edit, 'String')));
@@ -316,6 +326,10 @@ if newptsdata % update which points are here
             handles.c = [1 0 0];
             set(handles.pts_cmin_edit, 'Enable', 'off');
             set(handles.pts_cmax_edit, 'Enable', 'off');
+            if ~isempty(handles.vals_hist)
+                delete(handles.vals_hist);
+                handles.vals_hist = [];
+            end
             c_field = false;
             c_time = false;
         case 'time'
@@ -374,7 +388,15 @@ if redrawpoints
     end
 
     if ~isempty(handles.x) && numel(handles.c) == numel(handles.x)
-        handles.vals_hist = histogram(handles.vals_axes, handles.c);
+        if get(handles.update_hist_box, 'Value')
+            xlim = handles.r_axes.XLim;
+            ylim = handles.r_axes.YLim;
+            inds = handles.x > xlim(1) & handles.x < xlim(2) & ...
+                handles.y > ylim(1) & handles.y < ylim(2);
+            handles.vals_hist = histogram(handles.vals_axes, handles.c(inds));
+        else
+            handles.vals_hist = histogram(handles.vals_axes, handles.c);
+        end
     elseif ~isempty(handles.vals_hist)
         delete(handles.vals_hist)
         handles.vals_hist = [];
@@ -468,19 +490,32 @@ new_istruct_field_str(hObject,handles,'color', 2);
 function reconstruct_checkbox_Callback(~, ~, handles)
 redraw_image(handles);
 
-function pts_autocolor_checkbox_Callback(hObject, eventdata, handles)
+function pts_autocolor_checkbox_Callback(hObject, ~, handles)
 handles.auto_color = get(hObject, 'Value');
 guidata(hObject, handles);
 update_caxis(handles);
 
-function pts_cmin_edit_Callback(hObject, eventdata, handles)
+function pts_cmin_edit_Callback(hObject, ~, handles)
 set(handles.pts_autocolor_checkbox, 'Value', 0);
 handles.auto_color = 0;
 guidata(hObject, handles);
 update_caxis(handles);
 
-function pts_cmax_edit_Callback(hObject, eventdata, handles)
+function pts_cmax_edit_Callback(hObject, ~, handles)
 set(handles.pts_autocolor_checkbox, 'Value', 0);
 handles.auto_color = 0;
 guidata(hObject, handles);
 update_caxis(handles);
+
+function update_hist_box_Callback(hObject, ~, handles)
+if ~isempty(handles.vals_hist)
+    if get(hObject, 'Value')
+        xlim = handles.r_axes.XLim;
+        ylim = handles.r_axes.YLim;
+        inds = handles.x > xlim(1) & handles.x < xlim(2) & ...
+            handles.y > ylim(1) & handles.y < ylim(2);
+        handles.vals_hist = histogram(handles.vals_axes, handles.c(inds));
+    else
+        handles.vals_hist = histogram(handles.vals_axes, handles.c);
+    end
+end
