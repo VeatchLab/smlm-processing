@@ -52,9 +52,9 @@ end
 
 [r,w] = unix('free | grep Mem');
 m = sscanf(w(5:end), '%d');
-mfree = m(3)/16; % available memory divided by size of double
+mfree = m(3)*100;%/16; % available memory divided by size of double
 if numel(zedges)*numel(xedges)*numel(yedges) > mfree
-    error('calc_resolution_3D: not enough memory for the given bin size');
+    error(['calc_resolution_3D: not enough memory. requested:' num2str(numel(zedges)*numel(xedges)*numel(yedges)) ' available:' num2str(mfree)]);
 end
 
 pts = [x' y' z'];
