@@ -6,6 +6,5 @@ for i = 1:numel(data)
 
     inds = inpolygon(xs, ys, maskx, masky);
 
-    data(i).x = xs(inds);
-    data(i).y = ys(inds);
+    data(i) = structfun(@(x) x(inds), data(i), 'UniformOutput', false);
 end
