@@ -1,4 +1,4 @@
-function [Imerge, If, ir] = imerge_from_imagestruct(istruct)
+function [Imerge, If, ir] = imerge_from_imagestruct(istruct, varargin)
 
 if isfield(istruct, 'data') && ~isempty(istruct.data)
     ds = istruct.data;
@@ -6,6 +6,27 @@ elseif isfield(istruct, 'data_fname') && ~isempty(istruct.data_fname)
     ds = load(istruct.data_fname);
 else
     error('imerge_from_imagestruct: no data or data_fname');
+end
+
+% handle varargin
+if numel(varargin) > 0
+    m1 = 1; f1 = 1;
+    m2 = size(ds.data{1},1);
+    f2 = size(ds.data{1},2);
+    nf = f2;
+    for i = 1:2:numel(varargin)
+        switch varargin{i}
+            case {'First', 'first'}
+                m1 = varargin{i+1}(1); % movie1
+                f1 = varargin{i+1}(2); % frame1
+            case {'Last', 'last'}
+                m2 = varargin{i+1}(1); % last movie
+                f2 = varargin{i+1}(2); % last frame
+        end
+    end
+    ds.data = cellfun(@(s) s', 'UniformOutput', false);
+    inds = ((m1 - 1)*nf + f1) : ((m2 - 1)*nf + f2);
+    ds.data = cellfun(@(s) s(inds), 'UniformOutput', false);
 end
 
 if numel(ds.data) ~= istruct.channels
