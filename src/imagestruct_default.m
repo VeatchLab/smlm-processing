@@ -25,7 +25,7 @@ is.psize = 16*fac;
 is.imageref = default_iref(ds.data{1}, is.psize);
 is.sigmablur = repmat(20, 1, nchan)*fac;
 is.cmin = zeros(1, nchan);
-is.cmax = is.cmin + 5;
+is.cmax = is.cmin + 1;
 if nchan == 1
     is.color = {'white'};
 else
