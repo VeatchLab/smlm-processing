@@ -22,7 +22,7 @@ function varargout = inspect_STORMdata(varargin)
 
 % Edit the above text to modify the response to help inspect_STORMdata
 
-% Last Modified by GUIDE v2.5 26-Sep-2018 13:22:35
+% Last Modified by GUIDE v2.5 28-Mar-2019 15:16:12
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -147,6 +147,11 @@ else
 end
 
 handles.auto_color = get(handles.pts_autocolor_checkbox, 'Value');
+
+% setup Marker popup menu
+set(handles.Marker_popup, 'String', {'+', 'o', '*', '.', 'x', 'square',...
+    'diamond', 'v', '^', '>', '<', 'pentagram', 'hexagram', 'none'});
+set(handles.Marker_popup, 'Value', 4);
 
 guidata(hObject, handles);
 
@@ -382,15 +387,17 @@ if newdatarange
 end
 
 if redrawpoints
-    handles.m = '.';
+    markers = get(handles.Marker_popup, 'String');
+    handles.m = markers{get(handles.Marker_popup, 'Value')};
+    handles.markersize = str2double(get(handles.MarkerSize_edit, 'String')).^2;
     
     if isempty(handles.pts)
         hold(handles.r_axes, 'on');
-        handles.pts = scatter(handles.r_axes, handles.x, handles.y, 9, ...
+        handles.pts = scatter(handles.r_axes, handles.x, handles.y, handles.markersize, ...
             handles.c, 'Marker', handles.m);
     elseif ~isempty(handles.x)
         set(handles.pts, 'Xdata', handles.x, 'Ydata', handles.y,...
-            'CData', handles.c, 'Marker', handles.m);
+            'CData', handles.c, 'Marker', handles.m, 'SizeData', handles.markersize);
     else
         delete(handles.pts);
         handles.pts = [];
@@ -451,8 +458,13 @@ handles.Itoshow = Itoshow;
 guidata(handles.figure1, handles);
 
 function save_button_Callback(~, ~, handles)
-imwrite(handles.Itoshow, 'img.tif');
+fname = get(handles.image_fname_edit, 'String');
+imwrite(handles.Itoshow, fname);
 
+function save_imagestruct_pushbutton_Callback(hObject, eventdata, handles)
+fname = get(handles.istruct_fname_edit, 'String');
+is = handles.istruct;
+save(fname, '-struct','is');
 
 function new_istruct_field_num(hObject, handles, fieldname, chan)
 newval = str2double(get(hObject, 'String'));
@@ -527,4 +539,17 @@ if ~isempty(handles.vals_hist)
     else
         handles.vals_hist = histogram(handles.vals_axes, handles.c);
     end
+end
+
+function MarkerSize_edit_Callback(hObject, ~, handles)
+msize = str2double(get(hObject, 'String')).^2;
+if ~isempty(handles.pts)
+    set(handles.pts, 'SizeData', msize);
+end
+
+function Marker_popup_Callback(hObject, ~, handles)
+markers = get(hObject, 'String');
+m = markers{get(hObject, 'Value')};
+if ~isempty(handles.pts)
+    set(handles.pts, 'Marker', m);
 end
