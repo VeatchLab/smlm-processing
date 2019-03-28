@@ -61,6 +61,16 @@ else
     handles.culling_enabled = false;
 end
 
+if isfield(handles.datastruct, 'imageref') %arg was an imagestruct
+    handles.istruct = handles.datastruct;
+    if isempty(handles.istruct.data)
+        handles.istruct.data = load(handles.istruct.data_fname);
+    end
+    handles.datastruct = handles.istruct.data;
+else
+    handles.istruct = imagestruct_default(handles.datastruct);
+end
+
 handles.data = handles.datastruct.data;
 handles.nchannel = numel(handles.data);
 
@@ -80,7 +90,6 @@ fields = vertcat({'solid'}, fields(:));
 set(handles.color_by_menu, 'String', fields);
 
 % get preliminary imagestruct and reconstruction
-handles.istruct = imagestruct_default(handles.datastruct);
 set(handles.units_text, 'String', ['Units: ', handles.istruct.units]);
 
 [handles.Merge, handles.I] = imerge_from_imagestruct(handles.istruct);
@@ -249,7 +258,7 @@ if handles.auto_color
 else
     cmin = str2double(get(handles.pts_cmin_edit, 'String'));
     cmax = str2double(get(handles.pts_cmax_edit, 'String'));
-    cmax = max(cmax, cmin + 1); 
+    cmax = max(cmax, cmin*(1.00001)); 
     set(handles.pts_cmax_edit, 'String', num2str(cmax));
 
     caxis(ax, [cmin, cmax]);
