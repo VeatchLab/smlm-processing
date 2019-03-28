@@ -24,9 +24,9 @@ if numel(varargin) > 0
                 f2 = varargin{i+1}(2); % last frame
         end
     end
-    ds.data = cellfun(@(s) s', 'UniformOutput', false);
+    ds.data = cellfun(@(s) s', ds.data, 'UniformOutput', false);
     inds = ((m1 - 1)*nf + f1) : ((m2 - 1)*nf + f2);
-    ds.data = cellfun(@(s) s(inds), 'UniformOutput', false);
+    ds.data = cellfun(@(s) s(inds), ds.data, 'UniformOutput', false);
 end
 
 if numel(ds.data) ~= istruct.channels
@@ -43,9 +43,10 @@ else
     ir = default_iref(ds.data{1}, istruct.psize);
 end
 
-cm_size = 64;
+cm_size = 256;
 cm = gray(cm_size);
 Imerge = zeros([ir.ImageSize, 3]);
+If = cell(1,3);
 % Make images for each channel
 for i = 1:istruct.channels
     d = ds.data{i};
@@ -66,8 +67,11 @@ for i = 1:istruct.channels
     % scale to a color
     col = col2rgb(istruct.color{i});
 
-    If{i} = ind2rgb( 1 + uint8((cm_size - 1)*(Iblur - cmin)/(cmax - cmin)), ...
-                        cm*diag(col));
+%     If{i} = ind2rgb( 1 + uint8((cm_size - 1)*(Iblur - cmin)/(cmax - cmin)), ...
+%                         cm*diag(col));
+                    
+    I = min(1,(Iblur - cmin)/(cmax - cmin)); % scale to [0,1]
+    If{i} = cat(3, I * col(1), I * col(2), I * col(3));
 
     Imerge = Imerge + If{i};
 end
