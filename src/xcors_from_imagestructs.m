@@ -1,9 +1,13 @@
-function [c errs] = xcors_from_imagestructs(is, r)
+function [c errs] = xcors_from_imagestructs(is, r, bandwidth)
 
 nimage = numel(is);
 nmask = sum(cellfun(@numel, {is.maskx}));
 c = zeros(nmask, numel(r));
 errs = zeros(nmask, numel(r));
+
+if nargin < 3
+    bandwidth = 0;
+end
 
 ii = 0;
 for i = 1:nimage
@@ -36,6 +40,10 @@ for i = 1:nimage
         t1 = tree_from_points(box, pts1, 1000);
         t2 = tree_from_points(box, pts2, 1000);
 
-        [c(ii,:), errs(ii,:)] = xcor_tree(t1, t2, r, maskx, masky);
+        if bandwidth
+            [c(ii,:), errs(ii,:)] = xcor_tree_bandwidth(t1, t2, r, bandwidth, maskx, masky);
+        else
+            [c(ii,:), errs(ii,:)] = xcor_tree(t1, t2, r, maskx, masky);
+        end
     end
 end
