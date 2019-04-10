@@ -7,3 +7,6 @@ deploy:
 check:
 	rsync -rvvutn --delete src/ /lipid/group/global\ mfiles/STORManalysis/
 
+diff:
+	diff -r src/ /lipid/group/global\ mfiles/STORManalysis/
+
