@@ -22,7 +22,7 @@ function varargout = inspect_STORMdata(varargin)
 
 % Edit the above text to modify the response to help inspect_STORMdata
 
-% Last Modified by GUIDE v2.5 28-Mar-2019 15:16:12
+% Last Modified by GUIDE v2.5 10-Apr-2019 17:09:05
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -152,6 +152,13 @@ handles.auto_color = get(handles.pts_autocolor_checkbox, 'Value');
 set(handles.Marker_popup, 'String', {'+', 'o', '*', '.', 'x', 'square',...
     'diamond', 'v', '^', '>', '<', 'pentagram', 'hexagram', 'none'});
 set(handles.Marker_popup, 'Value', 4);
+
+% set up colormap popup menu. AFAIK there's no programmatic way to get the colormap list
+maps = {'parula', 'jet', 'hsv', 'hot', 'cool', 'spring', 'summer', 'autumn',...
+    'winter', 'gray', 'bone', 'copper', 'pink', 'lines', 'colorcube', 'prism',...
+    'flag', 'white'};
+set(handles.colormap_popup, 'String', maps);
+set(handles.colormap_popup, 'Value', 1);
 
 guidata(hObject, handles);
 
@@ -466,6 +473,22 @@ fname = get(handles.istruct_fname_edit, 'String');
 is = handles.istruct;
 save(fname, '-struct','is');
 
+function imagestruct_to_workspace_pushbutton_Callback(hObject, ~, handles)
+vname = get(handles.istruct_varname_edit, 'String');
+is = handles.istruct;
+try
+    q = evalin('base', vname);
+    %if you get to here, there is a var vname in base
+    answer = questdlg(...
+        sprintf('Are you sure you want to overwrite variable %s in base workspace?', vname),...
+        'Overwrite?', 'Yes', 'Cancel', 'Cancel');
+    if strcmp(answer, 'Yes')
+        assignin('base', vname, is);
+    end
+catch % no var vname in base, proceed
+    assignin('base', vname, is);
+end
+
 function new_istruct_field_num(hObject, handles, fieldname, chan)
 newval = str2double(get(hObject, 'String'));
 handles.istruct.(fieldname)(chan) = newval;
@@ -553,3 +576,8 @@ m = markers{get(hObject, 'Value')};
 if ~isempty(handles.pts)
     set(handles.pts, 'Marker', m);
 end
+
+function colormap_popup_Callback(hObject, ~, handles)
+maps = get(hObject, 'String');
+map = maps{get(hObject, 'Value')};
+colormap(handles.r_axes, map);
