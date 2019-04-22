@@ -36,9 +36,6 @@ if cont & ~isempty(record.dv_transform_fname)
 end
 
 if cont
-    cspecs = record.SPspecs.camera_specs;
-    dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %to nm
-
     % do to different datasets depending on number of channels
     if isempty(record.tform_channel)
         startdata = fits;
@@ -47,16 +44,10 @@ if cont
     end
 
     % apply the dilation to each channel
-    dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...
-                    'UniformOutput', false);
-
-    dilated.data = dilateddata;
-    dilated.date = datetime;
-    dilated.units = 'nm';
-    dilated.produced_by = 'dilatepts';
+    dilated = dilate_block(startdata, record, 'nm');
 
     if ~isempty(record.dilated_fname)
-        save(record.dilated_fname, '-struct', 'transformed');
+        save(record.dilated_fname, '-struct', 'dilated');
     end
 end
 
