@@ -21,12 +21,12 @@ if record.tform_channel % only transform if specified
         msg = 'channel dims for transform are different from those used for fitting';
         switch record.tform_channel
             case 1
-                if tf_mat.dims2 ~= record.SPspecs(1).channel_dims
+                if ~isequal(tf_mat.dims2, record.SPspecs(1).channel_dims)
                     error(msg);
                 end
             case 2
-                if tf_mat.dims1 ~= record.SPspecs(1).channel_dims || ...
-                        tf_mat.dims2 ~= record.SPspecs(2).channel_dims
+                if ~isequal(tf_mat.dims1, record.SPspecs(1).channel_dims) || ...
+                        ~isequal(tf_mat.dims2, record.SPspecs(2).channel_dims)
                     error(msg);
                 end
             otherwise
