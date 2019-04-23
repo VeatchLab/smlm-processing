@@ -434,77 +434,18 @@ if isempty(fits)
     error('geometry: No fits yet, aborting');
 end
 
-if handles.record.tform_channel % only transform if specified
-
-    transf_fname = handles.record.dv_transform_fname;
-    if exist(transf_fname, 'file')
-        % the transform structures only have reverse transforms,
-        % so we need T_1_2 to transform 2->1
-        tf = load(transf_fname, 'T_1_2');
-        tf = tf.T_1_2;
-    else
-        error('dualview transform file not specified or does not exist');
-    end
-
-    % transform
-    set(handles.dilated_stat, 'String', 'Applying Transform ...');
-    drawnow;
-
-    [tfdata] = apply_transform(fits.data{handles.record.tform_channel}, tf);
-
-    transformed.data = fits.data;
-    transformed.data{handles.record.tform_channel} = tfdata;
-
-    transformed.date = datetime;
-    transformed.produced_by = 'apply_transform';
-    transformed.units = 'px';
-
-    handles.transformed = transformed;
-
-end
+set(handles.dilated_stat, 'String', 'Applying Transform ...');
+drawnow;
+handles.transformed = transform_block(fits, handles.record);
 
 % pixel size
 set(handles.dilated_stat, 'String', 'Converting to nm ...');
 drawnow;
 
-dilatefac = cspecs.pixel_size / cspecs.magnification * 1e3; %pixels to nm
-
-
-% do to different datasets depending on number of channels
-if isempty(handles.record.tform_channel)
-    startdata = fits;
-else
-    startdata = transformed;
-end
-
-% apply the dilation to each channel
-
-
-if strcmp(SPspecs(1).fit_method, 'spline')
-    spline_cal = load(SPspecs.spline_calibration_fname, 'actualz', 'beginheight');
-    actualz = spline_cal.actualz;
-    beginheight = spline_cal.beginheight;
-
-    if actualz(1)>0
-        actualz = actualz-beginheight;
-    end
-    dilateddata = cellfun(@(d) dilatepts(d, dilatefac, 1e3*actualz), startdata.data,...
-        'UniformOutput', false);
-else
-    dilateddata = cellfun(@(d) dilatepts(d, dilatefac), startdata.data,...
-        'UniformOutput', false);
-end
-            
-
-dilated.data = dilateddata;
-dilated.date = datetime;
-dilated.units = 'nm';
-dilated.produced_by = 'dilatepts';
-
-handles.dilated = dilated;
+handles.dilated = dilate_block(handles.transformed, handles.record, 'nm');
 
 guidata(hObject, handles);
-set(handles.dilated_stat, 'String', {'done', char(dilated.date)});
+set(handles.dilated_stat, 'String', {'done', char(handles.dilated.date)});
 
 function cullspec1_button_Callback(hObject, ~, handles)
 dilated = getdataset(handles, 'dilated');
@@ -542,17 +483,10 @@ drawnow;
 
 dilated = getdataset(handles, 'dilated');
 
-% this should work independent of number of channels
-[culled.data, handles.record.cullinds] = ...
-    cellfun(@cullSTORM, dilated.data, cs, 'UniformOutput', false);
+[handles.culled, handles.record.cullinds] = cull_block(dilated, handles.record);
 
-culled.date = datetime;
-culled.produced_by = 'cullSTORM';
-culled.units = 'nm';
-
-handles.culled = culled;
 guidata(hObject, handles);
-set(handles.culled_stat, 'String', {'done ' char(culled.date)});
+set(handles.culled_stat, 'String', {'done ' char(handles.culled.date)});
 
 function edit_driftspec_button_Callback(hObject, ~, handles)
 %error('not implemented');
@@ -581,51 +515,13 @@ set(handles.final_stat, 'String', 'Correcting Drift ...');
 drawnow;
 
 culled = getdataset(handles, 'culled');
+[handles.final, handles.record.drift_info] = compute_drift_block(culled, handles.record);
 
-final.data = cell(1,handles.nchannels);
-
-timing = zeros(1, numel(culled.data{1}));
-nframes = size(culled.data{1},2);
-mdata = handles.record.metadata;
-for i = 1:size(culled.data{1},1)
-    dvec = datevec(mdata(i).start_time);
-    Tstart = 60*[0 0 60*24 60 1 1/60]*dvec';
-    timing((1:nframes) + (i-1)*nframes) = Tstart + ...
-                                                mdata(i).timestamp;
-end
-
-cull_channel = driftspecs.channel;
-
-[final.data{cull_channel}, drift_info] = compute_drift(culled.data{cull_channel}, timing, driftspecs);
-handles.record.drift_info = drift_info;
-
-figure
-errorbar(drift_info.xshift, drift_info.yshift, ...
-    -drift_info.dyshift, drift_info.dyshift, ...
-    -drift_info.dxshift, drift_info.dxshift);
-
-
-set(handles.apply_drift_button, 'Enable', 'on');
-
-if handles.nchannels > 1
-    for i=find((1:handles.nchannels) ~= cull_channel)
-        [final.data{i}] = apply_shifts(culled.data{i}, drift_info);
-    end
-end
-
-final.date = datetime;
-final.produced_by = 'compute_drift';
-final.units = 'nm';
-final.drift_info = drift_info;
-handles.final = final;
 guidata(hObject, handles);
-set(handles.final_stat, 'String', {'done', char(final.date)});
+set(handles.apply_drift_button, 'Enable', 'on');
+set(handles.final_stat, 'String', {'done', char(handles.final.date)});
 
-
-
-
-
-function apply_drift_button_Callback(hObject, eventdata, handles)
+function apply_drift_button_Callback(hObject, ~, handles)
 % check prereqs
 if ~isfield(handles.record, 'drift_info')
     nods = 1;
@@ -646,16 +542,11 @@ set(handles.final_stat, 'String', 'Applying Drift Correction ...');
 drawnow;
 
 culled = getdataset(handles, 'culled');
-final.data = cellfun(@(d) apply_shifts(d, drift_info), culled.data, 'UniformOutput', false);
-final.date = datetime;
-final.produced_by = 'compute_drift';
-final.units = 'nm';
-final.drift_info = drift_info;
 
-handles.final = final;
+handles.final = apply_drift_block(culled, handles.record);
+
 guidata(hObject, handles);
-set(handles.final_stat, 'String', {'done', char(final.date)});
-
+set(handles.final_stat, 'String', {'done', char(handles.final.date)});
 
 function save_button_Callback(~, ~, handles)
 save_all(handles);
@@ -734,7 +625,7 @@ data_name = tokens{1}{1};
 d = getdataset(handles, data_name);
 inspect_STORMdata(d);
 
-function tform_checkbox_Callback(hObject, eventdata, handles)
+function tform_checkbox_Callback(hObject, ~, handles)
 if get(hObject, 'Value')
     handles.record.tform_channel = handles.nchannels;
 else
@@ -743,9 +634,8 @@ end
 tform_uielements_enable_disable(handles);
 guidata(hObject, handles);
 
-
 function resgroup_specs_button_Callback(hObject, eventdata, handles)
-function calc_resolution_button_Callback(hObject, eventdata, handles)
+function calc_resolution_button_Callback(hObject, ~, handles)
 handles.resolution_text.String = 'Calculating...';
 drawnow
 final = getdataset(handles, 'final');
@@ -758,7 +648,6 @@ else
     record.res_specs = options;
     disp('here')
 end
-    
 
 st = 'Done: ';
 for i=1:length(data)
@@ -785,7 +674,7 @@ drawnow
 handles.record = record;
 guidata(hObject, handles);
 
-function grouping_button_Callback(hObject, eventdata, handles)
+function grouping_button_Callback(hObject, ~, handles)
 final = getdataset(handles, 'final');
 record = handles.record;
 
@@ -795,7 +684,6 @@ else
     options = grouping_default('nm');
     record.grouping_specs = options;
 end
-
 
 how = options.how;
 
@@ -811,10 +699,8 @@ switch how
         groupr = num2cell(options.groupr*ones(size(record.SPspecs))); 
 end
 
-            
 handles.grouped_stat.String = 'Grouping...';
 drawnow
-
 
 grouped.data = cellfun(@(d,r) groupSTORM(d, r), final.data, groupr, 'UniformOutput', false);
 
@@ -830,7 +716,4 @@ guidata(hObject, handles);
 handles.grouped_stat.String = 'Grouping complete';
 drawnow
 
-
 function grouping_specs_button_Callback(hObject, eventdata, handles)
-
-
