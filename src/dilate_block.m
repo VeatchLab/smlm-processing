@@ -10,6 +10,8 @@ oldunits = data.units;
 oldfac = getfac(oldunits, record);
 newfac = getfac(units, record);
 
+dilatefac = newfac/oldfac;
+
 SPspecs = record.SPspecs;
 
 if strcmp(SPspecs(1).fit_method, 'spline') % handle z case separately
@@ -23,7 +25,7 @@ if strcmp(SPspecs(1).fit_method, 'spline') % handle z case separately
     dilated.data = cellfun(@(d) dilatepts(d, dilatefac, 1e3*actualz), data.data,...
         'UniformOutput', false);
 else
-    dilated.data = cellfun(@(d) dilatepts(d, newfac/oldfac), data.data,...
+    dilated.data = cellfun(@(d) dilatepts(d, dilatefac), data.data,...
         'UniformOutput', false);
 end
 dilated.units = units;
