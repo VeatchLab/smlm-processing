@@ -49,6 +49,11 @@ new_fname = [fbase{1}{1} backup_suffix '.mat'];
 movefile(record.fits_fname, new_fname);
 save(record.fits_fname, '-struct', 'fits');
 
+if isempty(record.dv_transform_fname) && ~isempty(record.tform_channel)
+    save(record_fname, '-struct', 'record');
+    return
+end
+
 % do transform
 transformed = transform_block(fits, record);
 
