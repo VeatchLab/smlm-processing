@@ -209,6 +209,9 @@ bottom = top + newlim/50;
 patch(ax, [left, right, right, left], [bottom, bottom, top, top], 'w');
 text(ax, left, (bottom + top)/2, labeltext, 'Interpreter', 'tex');
 
+ax.XLim = newxlim;
+ax.YLim = newylim;
+
 handles = guidata(ax);
 if ~isempty(handles.vals_hist) && get(handles.update_hist_box, 'Value')
     inds = handles.x > newxlim(1) & handles.x < newxlim(2) & ...
