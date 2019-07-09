@@ -4,7 +4,7 @@ is = is(1);
 
 Im = imerge_from_imagestruct(is);
 
-figure; imshow(Im, is.imageref);
+h = figure; imshow(Im, is.imageref);
 hold on
 for i=1:numel(is.maskx)
     plot(is.maskx{i}, is.masky{i});
@@ -17,3 +17,5 @@ hold off
 
 is.maskx = [is.maskx, {maskx}];
 is.masky = [is.masky, {masky}];
+
+close(h);
