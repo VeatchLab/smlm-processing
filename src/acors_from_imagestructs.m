@@ -1,4 +1,4 @@
-function [g gerrs] = acors_from_imagestructs(is, r)
+function [g, gerrs] = acors_from_imagestructs(is, r)
 
 nimage = numel(is);
 nmask = sum(cellfun(@numel, {is.maskx}));
@@ -42,7 +42,7 @@ for i = 1:nimage
             [g{k}(iii,:), gerrs{k}(iii,:)] = xcor_tree(t, t, r, maskx, masky);
             %[g2(ii,:), g2errs(ii,:)] = xcor_tree(t2, t2, r, maskx, masky);
         end
-        ii = iii-numel(is(i).maskx);
         
     end
+    ii = iii; %+numel(is(i).maskx);
 end
