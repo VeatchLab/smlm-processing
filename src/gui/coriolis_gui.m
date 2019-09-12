@@ -51,7 +51,7 @@ handles.datasets = {'fits', 'transformed', 'dilated', 'culled', 'final', 'groupe
 
 % Deal with files and stuff
 handles.here = cd;
-if exist('./record.mat', 'file')
+if exist(fullfile(pwd,'record.mat'), 'file')
     handles.record_fname = 'record.mat';
     handles = load_all(handles);
     guidata(hObject, handles);
