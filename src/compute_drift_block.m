@@ -21,6 +21,7 @@ figure
 errorbar(drift_info.xshift, drift_info.yshift, ...
     -drift_info.dyshift, drift_info.dyshift, ...
     -drift_info.dxshift, drift_info.dxshift);
+axis equal
 
 if nchannels > 1
     for i=find((1:nchannels) ~= cull_channel)
