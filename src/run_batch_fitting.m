@@ -3,7 +3,7 @@ if exist('./record.mat', 'file')
     warning('Record already exists in this dir, aborting cleanly');
     return;
 end
-record = SP_record_default(nchannels, varargin{:});
+record = SP_record_default(nchannels, 'gaussianPSF', varargin{:});
 save record.mat -struct record % in case something breaks later, save this right away.
 
 % Fitting step
@@ -24,7 +24,7 @@ cont = true; % set this false if some failure
 % Transform step
 if cont & ~isempty(record.dv_transform_fname)
     try
-        transformed = trasform_block(fits, record);
+        transformed = transform_block(fits, record);
 
         if ~isempty(record.transformed_fname)
             save(record.transformed_fname, '-struct', 'transformed');
@@ -33,6 +33,8 @@ if cont & ~isempty(record.dv_transform_fname)
         warning('An error ocurred in the transform step:\n%s', ME.message);
         cont = false;
     end
+else
+    cont = false;
 end
 
 if cont
