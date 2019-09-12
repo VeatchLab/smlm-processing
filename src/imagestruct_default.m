@@ -2,7 +2,8 @@ function is = imagestruct_default(fname)
 
 if ischar(fname)
     ds = load(fname);
-    is.data_fname = fname;
+    is.data_fname = which(fname);
+    fprintf('Using absolute path: %s\n', is.data_fname);
     is.data = [];
 else
     ds = fname;
