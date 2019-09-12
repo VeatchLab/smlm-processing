@@ -22,7 +22,7 @@ function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 
 % Edit the above text to modify the response to help coriolis_gui
 
-% Last Modified by GUIDE v2.5 17-Aug-2018 15:18:59
+% Last Modified by GUIDE v2.5 16-Aug-2019 14:40:26
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 0;
@@ -220,6 +220,12 @@ for i = 1:numel(fnames)
     end
 
     handles.(snames{i}) = s;
+    
+    if isempty(record.dv_transform_fname)
+        handles.tform_fname_text.String = 'No transform selected';
+    else
+        handles.tform_fname_text.String = record.dv_transform_fname;
+    end
         
 end
 
@@ -420,6 +426,8 @@ end
 fname = [fpath, fname];
 
 handles.record.dv_transform_fname = fname;
+
+handles.tform_fname_text.String = fname;
 
 guidata(hObject, handles);
 
