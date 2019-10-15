@@ -18,4 +18,6 @@ hold off
 is.maskx = [is.maskx, {maskx}];
 is.masky = [is.masky, {masky}];
 
-close(h);
+if isvalid(h)
+    close(h);
+end
