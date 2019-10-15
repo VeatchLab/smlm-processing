@@ -103,7 +103,7 @@ end
 
 [active.lastt] = deal(t);
 for k = 1:numel(active)
-    active(k).nFramesOn = numel(active(k).points);
+    active(k).nFramesOn = numel(active(k).points.x);
 end
 
 tracks(ntracks + (1:numel(active))) = active;
