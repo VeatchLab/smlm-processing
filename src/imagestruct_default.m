@@ -1,9 +1,15 @@
 function is = imagestruct_default(fname)
 
 if ischar(fname)
-    ds = load(fname);
-    is.data_fname = fname; %which(fname);
-    %fprintf('Using absolute path: %s\n', is.data_fname);
+    dentry = dir(fname);
+    if ~isempty(dentry)
+        fullname = fullfile(dentry.folder, dentry.name);
+        ds = load(fullname);
+        is.data_fname = fullname; %which(fname);
+        fprintf('Using absolute path: %s\n', is.data_fname);
+    else
+        error('imagestruct_default: Can''t find file %d', fname);
+    end
     is.data = [];
 else
     ds = fname;
