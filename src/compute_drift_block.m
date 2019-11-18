@@ -1,19 +1,21 @@
 function [aligned, drift_info] = compute_drift_block(data, record)
 
-timing = zeros(1, numel(data.data{1}));
-nframes = size(data.data{1},2);
-mdata = record.metadata;
-for i = 1:size(data.data{1},1)
-    dvec = datevec(mdata(i).start_time);
-    Tstart = 60*[0 0 60*24 60 1 1/60]*dvec';
-    timing((1:nframes) + (i-1)*nframes) = Tstart + ...
-                                                mdata(i).timestamp;
-end
-
 nchannels = numel(data.data);
 
 driftspecs = record.driftspecs;
 cull_channel = driftspecs.channel;
+
+timing = 1:numel(data.data{cull_channel});
+nframes = size(data.data{cull_channel},2);
+mdata = record.metadata;
+for i = 1:size(data.data{cull_channel},1)
+    if isfield(mdata(i), 'start_time')
+        dvec = datevec(mdata(i).start_time);
+        Tstart = 60*[0 0 60*24 60 1 1/60]*dvec';
+        timing((1:nframes) + (i-1)*nframes) = Tstart + ...
+                                                mdata(i).timestamp;
+    end
+end
 
 [aligned.data{cull_channel}, drift_info] = compute_drift(data.data{cull_channel}, timing, driftspecs);
 
