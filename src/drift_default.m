@@ -50,9 +50,15 @@ switch fit_type
     case 'spline'
         options.correctz = 1;
 end
-%options.align_to_image_flag= 0;
-%options.align_to_TIR_flag= 0;
-%options.display_results_flag= 1;
-%options.TIR_filename = [];
-%options.image_for_alignment = [];
-%options.bounding_box= [];%[0 0 512 512];
+
+% new driftspecs for the mean shift algorithm
+options.outlier_error = 50*fac;
+options.delta_broad = 100*fac;
+options.delta_narrow_ratio = 3;
+options.calc_error = 1;
+options.broadsweep = 0;
+options.fix_nframes_per_alignment = 1;
+options.skip_correction = 0;
+options.version = 0.1;
+
+

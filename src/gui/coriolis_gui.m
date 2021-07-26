@@ -498,15 +498,30 @@ set(handles.culled_stat, 'String', {'done ' char(handles.culled.date)});
 
 function edit_driftspec_button_Callback(hObject, ~, handles)
 %error('not implemented');
-handles.record.driftspecs = driftspecs_gui(handles.record.driftspecs);
+% validate driftspecs
+culled = getdataset(handles, 'culled');
+if isempty(culled)
+    error('drift correction: no culled data, aborting');
+end
+driftspecs_version = 0.1;
+if ~isfield(handles.record.driftspecs, 'version')
+    handles.record.driftspecs = validate_driftspecs(handles.record.driftspecs, driftspecs_version, culled);
+end
+driftspecs = handles.record.driftspecs;
+handles.record.driftspecs = driftspecs_gui(handles.record.driftspecs, culled);
 guidata(hObject,handles);
 
 function compute_drift_button_Callback(hObject, ~, handles)
+culled = getdataset(handles, 'culled');
 % check prereqs
 if ~isfield(handles.record, 'driftspecs')
     nods = 1;
 else
     nods = 0;
+    driftspecs_version = 0.1;
+    if ~isfield(handles.record.driftspecs, 'version')
+        handles.record.driftspecs = validate_driftspecs(handles.record.driftspecs, driftspecs_version, culled);
+    end
     driftspecs = handles.record.driftspecs;
 end
 
@@ -522,7 +537,6 @@ end
 set(handles.final_stat, 'String', 'Correcting Drift ...');
 drawnow;
 
-culled = getdataset(handles, 'culled');
 [handles.final, handles.record.drift_info] = compute_drift_block(culled, handles.record);
 
 guidata(hObject, handles);
@@ -684,6 +698,7 @@ guidata(hObject, handles);
 
 function grouping_button_Callback(hObject, ~, handles)
 final = getdataset(handles, 'final');
+culled = getdataset(handles, 'culled');
 record = handles.record;
 
 if isfield(record, 'grouping_specs')
@@ -695,18 +710,19 @@ end
 
 how = options.how;
 
-switch how
-    case 'auto'
-        if ~isempty(record.resolution)
-            res = record.resolution;            
-            groupr = cellfun(@(r) options.multfac*r(1), res, 'UniformOutput', false);
-        else
-            groupr = num2cell(30*ones(size(record.SPspecs)));
-        end
-    case 'fixed'
-        groupr = num2cell(options.groupr*ones(size(record.SPspecs))); 
-end
+% switch how
+%     case 'auto'
+%         if ~isempty(record.resolution)
+%             res = record.resolution;            
+%             groupr = cellfun(@(r) options.multfac*r(1), res, 'UniformOutput', false);
+%         else
+%             groupr = num2cell(30*ones(size(record.SPspecs)));
+%         end
+%     case 'fixed'
+%         groupr = num2cell(options.groupr*ones(size(record.SPspecs))); 
+% end
 
+groupr = num2cell(150); % for now
 handles.grouped_stat.String = 'Grouping...';
 drawnow
 
