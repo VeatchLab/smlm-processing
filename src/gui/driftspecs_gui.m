@@ -54,11 +54,10 @@ if numel(varargin) > 1
    culled = varargin{2};
    % Fill in missing values from default
     if isfield(culled.data{1}(1), 'z')
-        handles.specs = drift_default(culled, 'spline');
+        d = drift_default(culled, 'spline');
     else    
-        handles.specs = drift_default(culled, 'gaussianPSF');
+        d = drift_default(culled, 'gaussianPSF');
     end
-    d = handles.specs;
 else
     handles.specs = drift_default('nm', 'gaussianPSF');
     d = handles.specs;

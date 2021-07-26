@@ -20,7 +20,11 @@ function driftspecs = update_driftspecs(driftspecs, datastruct)
 
 fprintf('input driftspecs was version %f. updating now\n', driftspecs.version);
 if driftspecs.version == 0
-    driftspecs = drift_default(datastruct, 'gaussianPSF');
+    if isfield(datastruct.data{1}(1), 'z')
+        d = drift_default(datastruct, 'spline');
+    else    
+        d = drift_default(datastruct, 'gaussianPSF');
+    end
 end
 
 driftspecs.version = 0.1;
