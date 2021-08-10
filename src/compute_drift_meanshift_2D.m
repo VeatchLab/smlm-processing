@@ -210,7 +210,7 @@ end
 
 [D, stderr, mse] = lscov(A, b, w);
 
-if nargin == 3
+if nargin == 3 && isfield(record.metadata, 'start_time')
     % Convert times to s from start of experiment.
     mdata = record.metadata;
     [movienum, Nframes] = size(olddata);

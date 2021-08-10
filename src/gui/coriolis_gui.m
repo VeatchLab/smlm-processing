@@ -657,31 +657,42 @@ tform_uielements_enable_disable(handles);
 guidata(hObject, handles);
 
 function resgroup_specs_button_Callback(hObject, eventdata, handles)
+% validate res_specs
+res_specs_version = 0.1;
+if ~isfield(handles.record.res_specs, 'version')
+    handles.record.res_specs = validate_res_specs(handles.record.res_specs, res_specs_version);
+end
+
+res_specs = handles.record.res_specs;
+handles.record.res_specs = res_specs_gui(handles.record.res_specs);
+guidata(hObject,handles);
+
 function calc_resolution_button_Callback(hObject, ~, handles)
 handles.resolution_text.String = 'Calculating...';
 drawnow
 final = getdataset(handles, 'final');
 data = final.data;
 record = handles.record;
-if isfield(record, 'res_specs')
-    options = record.res_specs;
+if ~isfield(handles.record, 'res_specs')
+    options = resolution_default('nm');
 else
-    options = resolution_default('nm', record.SPspecs.fit_method);
-    record.res_specs = options;
-    disp('here')
+    res_specs_version = 0.1;
+    if ~isfield(handles.record.res_specs, 'version')
+        handles.record.res_specs = validate_res_specs(handles.record.res_specs, res_specs_version);
+    end
+    options = handles.record.res_specs;
 end
-
 st = 'Done: ';
 for i=1:length(data)
     switch record.SPspecs(i).fit_method
         case 'gaussianPSF'
-            [res{i} info{i}] = calc_resolution(data{i}, options);%10, 5, 'sequential', 250);
+            [res{i} info{i}] = calc_resolution_crosspairs(data{i}, record, options);%10, 5, 'sequential', 250);
             st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
-            figure
-            plot(info{i}.F, info{i}.rc(2:end), info{i}.c(2:end))
-            title(['chan' num2str(i) '; ' num2str(res{i}, 2) final.units]);
+%             figure
+%             plot(info{i}.F, info{i}.rc(2:end), info{i}.c(2:end))
+%             title(['chan' num2str(i) '; ' num2str(res{i}, 2) final.units]);
         case 'spline'
-             [res{i} info{i}] = calc_resolution_3D(data{i}, options);
+             [res{i} info{i}] = calc_resolution_crosspairs_3D(data{i}, record, options);
              st = [st 'sxy=' num2str(res{i}(1), 2) final.units ', ' ...
                  'sz=' num2str(res{i}(2), 2) final.units];
     end
@@ -689,7 +700,7 @@ end
 
 record.resolution = res;
 record.resolution_info = info;
-
+record.res_specs = handles.record.res_specs;
 handles.resolution_text.String = st;
 drawnow
 
@@ -698,7 +709,6 @@ guidata(hObject, handles);
 
 function grouping_button_Callback(hObject, ~, handles)
 final = getdataset(handles, 'final');
-culled = getdataset(handles, 'culled');
 record = handles.record;
 
 if isfield(record, 'grouping_specs')
