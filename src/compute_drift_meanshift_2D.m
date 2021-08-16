@@ -120,6 +120,7 @@ parfor i = 1:nTimeBin - 1
         if isnan(xshift_temp(j))
             xshift_temp(j) = xoffset;
             yshift_temp(j) = yoffset;
+            warning('Pairwise shifts are giving NaN. This is a false alignment.')
         end
         
         if calc_error
@@ -130,6 +131,11 @@ parfor i = 1:nTimeBin - 1
                 dxshift_temp(j) = rmax;
                 dyshift_temp(j) = rmax;
             end
+        end
+        
+        % Check to make sure pairwise shift displacement isn't greater than rmax
+        if sqrt((xshift_temp(j)-xshift_temp(j-1).^2)+(yshift_temp(j)-yshift_temp(j-1).^2)) > rmax
+            warning('Pairwise shift displacement > rmax. This is either a false alignment, or rmax is too small.')
         end
     end
     % updating the matrices with the temporary rows
@@ -298,5 +304,3 @@ for i = 1:numel(d)
     last = last + ns(i);
 end
 end
-
-

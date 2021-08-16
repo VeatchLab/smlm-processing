@@ -1,5 +1,7 @@
 function [res, info] = calc_resolution_crosspairs_3D(data, record, options)
-% fields of options: Npts, rmax, binsize
+% Calculates the 3D resolution as a function of the time lapse tau between
+% pairs of localizations. Computes this separately based on the 2D cross
+% sections x-y, x-z, and y-z. Used to evaluate the drift correction.
 
 mdata = record.metadata;
 frame_time = record.metadata.frame_time;

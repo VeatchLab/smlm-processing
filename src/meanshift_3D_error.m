@@ -91,11 +91,9 @@ closei_forz = find(r < delta);
 dz_corr = dz(closei_forz) - zshift(end);
 z = abs(dz_corr);
 if numel(closei_forz) < 100
-    zbinsize = 20;
-elseif numel(closei_forz) < 1000
-    zbinsize = 10;
-else    
-    zbinsize = 5;
+    zbinsize = delta/10;
+else 
+    zbinsize = delta/20;
 end
 
 zbins = 0:zbinsize:rmax;
@@ -103,6 +101,7 @@ zbins = 0:zbinsize:rmax;
 
 zmid = 0.5 * (zedges(1:end-1) + zedges(2:end));
 depth = max(dz) - min(dz);
+
 zrho = ndata1 * ndata2 / depth;
 
 if zrho == 0
@@ -152,8 +151,16 @@ fgoz.StartPoint = [max(Nz_norm(1:zdeltabins)), delta, median(Nz_norm(:))];
 fgoz.Lower = [0, 0, 0];
 fgoz.Upper = [Inf, 2*delta, Inf];
 
-F_z = fit(zmid(1:zdeltabins)', Nz_norm(1:zdeltabins)', fitgaussz, fgoz);
-zloc_error = F_z.s;
+try 
+    F_z = fit(zmid(1:zdeltabins)', Nz_norm(1:zdeltabins)', fitgaussz, fgoz);
+    zloc_error = F_z.s;
+catch
+    zntruepairs = 0;
+    znfalsepairs = NaN;
+    dzshift = NaN;
+    zloc_error = delta;
+    return
+end
     
 CI_z = confint(F_z, .68);
 d_z = .5*(diff(CI_z, 1)); 

@@ -1,4 +1,6 @@
 function [res, info] = calc_resolution_crosspairs(data, record, options)
+% Calculates the 2D resolution as a function of the time lapse tau between
+% pairs of localizations. Used to evaluate the drift correction.
 
 mdata = record.metadata;
 frame_time = record.metadata.frame_time;

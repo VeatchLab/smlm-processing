@@ -23,6 +23,3 @@ options.show_diagnostics = 0;
 options.version = 0.1;
 
 end
-        
-        
-

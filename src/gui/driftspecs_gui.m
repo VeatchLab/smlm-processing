@@ -22,7 +22,7 @@ function varargout = driftspecs_gui(varargin)
 
 % Edit the above text to modify the response to help driftspecs_gui
 
-% Last Modified by GUIDE v2.5 26-Jul-2021 14:19:11
+% Last Modified by GUIDE v2.5 16-Aug-2021 15:18:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -47,29 +47,17 @@ end
 % --- Executes just before driftspecs_gui is made visible.
 function driftspecs_gui_OpeningFcn(hObject, eventdata, handles, varargin)
 handles.to_return = nargout;
-if numel(varargin) > 0
-    handles.specs = varargin{1};
-end
-if numel(varargin) > 1
-   culled = varargin{2};
-   % Fill in missing values from default
-    if isfield(culled.data{1}(1), 'z')
-        d = drift_default(culled, 'spline');
-    else    
-        d = drift_default(culled, 'gaussianPSF');
-    end
-else
-    handles.specs = drift_default('nm', 'gaussianPSF');
-    d = handles.specs;
+
+if numel(varargin) < 2
+    error('Not enough arguments for driftspecs_gui. 2 required')
 end
 
+handles.specs = varargin{1};
+culled = varargin{2};
+
+specs_version = 0.1;
 % Fill in missing values from default
-f = fieldnames(d);
-for i = 1:numel(f)
-    if ~isfield(handles.specs, f{i})
-        handles.specs.(f{i}) = d.(f{i});
-    end
-end
+handles.specs = validate_driftspecs(handles.specs, specs_version, culled);
 
 handles.totalnframes = numel(culled.data{1});
 update_fields_from_specs(handles);
@@ -77,10 +65,6 @@ handles.output = handles.specs;
 
 % Update handles structure
 guidata(hObject, handles);
-
-% UIWAIT makes driftspecs_gui wait for user response (see UIRESUME)
-% uiwait(handles.figure1);
-
 
 % --- Outputs from this function are returned to the command line.
 function varargout = driftspecs_gui_OutputFcn(hObject, eventdata, handles)
@@ -157,178 +141,17 @@ s.units = units_options{get(handles.units_menu, 'value')};
 specs = s;
 
 function npoints_for_alignment_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to npoints_for_alignment_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of npoints_for_alignment_edit as text
-%        str2double(get(hObject,'String')) returns contents of npoints_for_alignment_edit as a double
-
 % update nframes_per_alignment
 if get(handles.fix_nframes_per_alignment_checkbox, 'value')
     set(handles.nframes_per_alignment_edit, 'String', num2str(floor(handles.totalnframes/str2double(get(handles.npoints_for_alignment_edit, 'String')))));
 end
-
-
-% --- Executes during object creation, after setting all properties.
-function npoints_for_alignment_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to npoints_for_alignment_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
 
 
 function nframes_per_alignment_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to nframes_per_alignment_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of nframes_per_alignment_edit as text
-%        str2double(get(hObject,'String')) returns contents of nframes_per_alignment_edit as a double
-
 % update nframes_per_alignment
 if get(handles.fix_nframes_per_alignment_checkbox, 'value')
     set(handles.nframes_per_alignment_edit, 'String', num2str(floor(handles.totalnframes/str2double(get(handles.npoints_for_alignment_edit, 'String')))));
 end
-
-
-% --- Executes during object creation, after setting all properties.
-function nframes_per_alignment_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to nframes_per_alignment_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function delta_broad_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to delta_broad_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of delta_broad_edit as text
-%        str2double(get(hObject,'String')) returns contents of delta_broad_edit as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function delta_broad_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to delta_broad_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function rmax_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to rmax_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of rmax_edit as text
-%        str2double(get(hObject,'String')) returns contents of rmax_edit as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function rmax_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to rmax_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in units_menu.
-function units_menu_Callback(hObject, eventdata, handles)
-% hObject    handle to units_menu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns units_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from units_menu
-
-
-% --- Executes during object creation, after setting all properties.
-function units_menu_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to units_menu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on selection change in interp_method_menu.
-function interp_method_menu_Callback(hObject, eventdata, handles)
-% hObject    handle to interp_method_menu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns interp_method_menu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from interp_method_menu
-
-
-% --- Executes during object creation, after setting all properties.
-function interp_method_menu_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to interp_method_menu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in broadsweep_checkbox.
-function broadsweep_checkbox_Callback(hObject, eventdata, handles)
-% hObject    handle to broadsweep_checkbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of broadsweep_checkbox
-
-
-% --- Executes on button press in correctz_checkbox.
-function correctz_checkbox_Callback(hObject, eventdata, handles)
-% hObject    handle to correctz_checkbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of correctz_checkbox
-
-
-% --- Executes on button press in calc_error_checkbox.
-function calc_error_checkbox_Callback(hObject, eventdata, handles)
-% hObject    handle to calc_error_checkbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of calc_error_checkbox
-
 
 % --- Executes on button press in return_button.
 function return_button_Callback(hObject, eventdata, handles)
@@ -348,90 +171,3 @@ uiresume(handles.figure1);
 if ~handles.to_return
     delete(handles.figure1)
 end
-
-
-
-function drift_channel_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to drift_channel_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of drift_channel_edit as text
-%        str2double(get(hObject,'String')) returns contents of drift_channel_edit as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function drift_channel_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to drift_channel_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function outlier_error_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to outlier_error_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of outlier_error_edit as text
-%        str2double(get(hObject,'String')) returns contents of outlier_error_edit as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function outlier_error_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to outlier_error_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-
-function delta_narrow_ratio_edit_Callback(hObject, eventdata, handles)
-% hObject    handle to delta_narrow_ratio_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of delta_narrow_ratio_edit as text
-%        str2double(get(hObject,'String')) returns contents of delta_narrow_ratio_edit as a double
-
-
-% --- Executes during object creation, after setting all properties.
-function delta_narrow_ratio_edit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to delta_narrow_ratio_edit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-
-% --- Executes on button press in skip_correction_checkbox.
-function skip_correction_checkbox_Callback(hObject, eventdata, handles)
-% hObject    handle to skip_correction_checkbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of skip_correction_checkbox
-
-
-% --- Executes on button press in fix_nframes_per_alignment_checkbox.
-function fix_nframes_per_alignment_checkbox_Callback(hObject, eventdata, handles)
-% hObject    handle to fix_nframes_per_alignment_checkbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hint: get(hObject,'Value') returns toggle state of fix_nframes_per_alignment_checkbox

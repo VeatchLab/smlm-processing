@@ -14,7 +14,7 @@ else
     record.tform_channel = 2;
 end
 
-record.driftspecs = drift_default('nm', fit_type);
+record.driftspecs = [];
 record.drift_info = [];
 record.cullinds = cell(size(record.cullspecs));
 record.fits_fname = 'fits.mat';
@@ -26,7 +26,7 @@ record.fit_type = fit_type;
 
 % new in version 0.2
 record.grouped_fname = '';
-record.res_specs = resolution_default('nm', fit_type);
+record.res_specs = [];
 record.grouping_specs = grouping_default('nm');
 
 record.version = 0.2;

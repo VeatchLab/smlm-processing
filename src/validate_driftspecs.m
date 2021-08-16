@@ -17,14 +17,17 @@ end
 
 function driftspecs = update_driftspecs(driftspecs, datastruct)
 % UPDATE_driftspecs update the driftspecs struct from its current version to the next one
-
 fprintf('input driftspecs was version %f. updating now\n', driftspecs.version);
-if driftspecs.version == 0
-    if isfield(datastruct.data{1}(1), 'z')
-        d = drift_default(datastruct, 'spline');
-    else    
-        d = drift_default(datastruct, 'gaussianPSF');
-    end
+% retain settings from previous version of driftspecs
+dold = driftspecs;
+if isfield(datastruct.data{1}(1), 'z')
+    driftspecs = drift_default(datastruct, 'spline');
+else
+    driftspecs = drift_default(datastruct, 'gaussianPSF');
+end
+fs = fieldnames(dold);
+for i = 1:numel(fs)
+    driftspecs.(fs{i}) = dold.(fs{i});
 end
 
 driftspecs.version = 0.1;

@@ -2,16 +2,16 @@ function [fs, allres, errors, centerx, centery] = fit_corr_function(g, xc, yc, g
 
 % make a fittype for the gaussian
 fitgauss = fittype(...
-    @(A,s,x0,y0,c,x,y) A*exp(-((x0-x).^2 + (y0-y).^2)/(2*s.^2))+c,...
-    'coefficients', {'A', 's', 'x0', 'y0', 'c'},...
+    @(A,s1,s2,x0,y0,c,x,y) A*exp(-((x0-x).^2/(2*s1.^2) + (y0-y).^2/(2*s2.^2)))+c,...
+    'coefficients', {'A', 's1', 's2', 'x0', 'y0', 'c'},...
     'indep', {'x', 'y'}, 'dep', 'z');
 [xmesh,ymesh] = meshgrid(xc, yc);
 tofit = goodbins == 1;
 
 fgo = fitoptions(fitgauss);
-fgo.StartPoint = [1,20,0,0 0];
-fgo.Lower = [0,0,-rmax,-rmax,-inf];
-fgo.Upper = [Inf,rmax,rmax,rmax,inf];
+fgo.StartPoint = [1,20,30,0,0 0];
+fgo.Lower = [0,0,0,-rmax,-rmax,-inf];
+fgo.Upper = [Inf,rmax,rmax,rmax,rmax,inf];
 
 for l=1:numel(tcenters)-1
     
@@ -25,8 +25,8 @@ for l=1:numel(tcenters)-1
     
     CI = confint(fs{l}, .68);
     d = .5*(diff(CI, 1)); % standard errors
-    allres(l) = sqrt(1/2*f.s^2 + f.x0^2 + f.y0^2);
-    errors(l) = sqrt((f.s*d(2))^2+(2*f.x0*d(3))^2+(2*f.y0*d(4))^2)/allres(l);
+    allres(l) = sqrt(1/2*f.s2^2 + f.x0^2 + f.y0^2);
+    errors(l) = sqrt((f.s2*d(2))^2+(2*f.x0*d(3))^2+(2*f.y0*d(4))^2)/allres(l);
     
     if show_diagnostics
         % show differences of corr functions

@@ -677,6 +677,9 @@ for i=1:length(data)
         case 'gaussianPSF'
             [res{i} info{i}] = calc_resolution_crosspairs(data{i}, record, options);
             st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
+%             figure
+%             plot(info{i}.F, info{i}.rc(2:end), info{i}.c(2:end))
+%             title(['chan' num2str(i) '; ' num2str(res{i}, 2) final.units]);
         case 'spline'
              [res{i} info{i}] = calc_resolution_crosspairs_3D(data{i}, record, options);
              st = [st 'sxy=' num2str(res{i}(1), 2) final.units ', ' ...
