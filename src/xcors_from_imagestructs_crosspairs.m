@@ -36,6 +36,12 @@ for i = 1:nimage
         pts1 = [x1(ind1)', y1(ind1)'];
         pts2 = [x2(ind2)', y2(ind2)'];
         
+        if numel(pts1) == 0 || numel(pts2) == 0
+            c(ii,:) = NaN;
+            errs(ii,:) = NaN;
+            continue;
+        end
+        
         if bandwidth
             [c(ii,:), errs(ii,:)] = xcor_crosspairs_bandwidth(pts1, pts2, r, bandwidth, maskx, masky);
         else

@@ -23,8 +23,8 @@ top = top - dy;
 bottom = iref.YWorldLimits(2)/pheight - dy;
 
 % non-dimensionalize
-coords = [allx'/pwidth - dy, ally'/pheight - dy];
-psfsigma = psfsigma/(mean(pwidth, pheight));
+coords = [allx(:)/pwidth - dy, ally(:)/pheight - dy];
+psfsigma = psfsigma/(mean([pwidth, pheight]));
 if pwidth ~= pheight
     warning('pixel width and height are different');
 end

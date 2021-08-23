@@ -294,10 +294,10 @@ for i = 1:ncut
     end
 end
     
-figure; errorbar(midtiming, D_all(:,3), [0; stderr(:,3)], 'bo')
-hold on;
-plot(timings, zfit, 'b-')
-hold on;
+% figure; errorbar(midtiming, D_all(:,3), [0; stderr(:,3)], 'bo')
+% hold on;
+% plot(timings, zfit, 'b-')
+% hold on;
 
 %     Plot vertical lines at cuts
 y = ylim; %current y-axis limits
@@ -310,10 +310,10 @@ ylabel('Z-Drift (nm)');
 
 
 stderr = vertcat([0 0 0], stderr);
-figure; errorbar(D_all(:,1), D_all(:,2), stderr(:,2), stderr(:,2), stderr(:,1), stderr(:,1), 'b-o')
-xlabel('X-Drift (nm)')
-ylabel('Y-Drift (nm)')
-axis equal
+% figure; errorbar(D_all(:,1), D_all(:,2), stderr(:,2), stderr(:,2), stderr(:,1), stderr(:,1), 'b-o')
+% xlabel('X-Drift (nm)')
+% ylabel('Y-Drift (nm)')
+% axis equal
 
 % info and diagnostics
 drift_info.xshift = xshift;

@@ -33,10 +33,28 @@ end
 
 if driftspecs.correctz
     [aligned.data{cull_channel}, drift_info] = compute_drift_meanshift_3D(data.data{cull_channel}, driftspecs, record, activenotif);
+    figure; errorbar(drift_info.midtiming, drift_info.drift(:,3), [drift_info.stderr(:,3)], 'bo')
+    hold on;
+    plot(drift_info.timings, drift_info.zfit, 'b-')
+    hold on;
+    
+    %     Plot vertical lines at cuts
+    y = ylim; %current y-axis limits
+    for i = 2:length(drift_info.segments)
+        plot([drift_info.timings(drift_info.segments{i}(1)) drift_info.timings(drift_info.segments{i}(1))], [y(1) y(2)], '--m');
+        hold on;
+    end
+    xlabel('Timing');
+    ylabel('Z-Drift (nm)');
+
 else
     [aligned.data{cull_channel}, drift_info] = compute_drift_meanshift_2D(data.data{cull_channel}, driftspecs, record);
 end
 
+figure; errorbar(drift_info.drift(:,1), drift_info.drift(:,2), drift_info.stderr(:,2), drift_info.stderr(:,2), drift_info.stderr(:,1), drift_info.stderr(:,1), 'b-o')
+xlabel('X-Drift (nm)')
+ylabel('Y-Drift (nm)')
+axis equal
 
 if nchannels > 1
     for i=find((1:nchannels) ~= cull_channel)

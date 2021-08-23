@@ -36,7 +36,7 @@ for i = 1:nimage
             %pts2 = [x2(ind2)', y2(ind2)'];
             
             box = [min(maskx), max(maskx), min(masky), max(masky)];
-            t = tree_from_points(box, pts, 1000);
+            t = tree_from_points(box, pts, r(end)/2);
             %t2 = tree_from_points(box, pts2, 1000);
             
             [g{k}(iii,:), gerrs{k}(iii,:)] = xcor_tree(t, t, r, maskx, masky);

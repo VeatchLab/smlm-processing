@@ -245,10 +245,10 @@ xfit = interp1(midtiming, D_all(:,1), timings, interp_method, 'extrap');
 yfit = interp1(midtiming, D_all(:,2), timings, interp_method, 'extrap');
 
 stderr = vertcat([0 0], stderr);
-figure; errorbar(D_all(:,1), D_all(:,2), stderr(:,2), stderr(:,2), stderr(:,1), stderr(:,1), 'b-o')
-xlabel('X-Drift (nm)')
-ylabel('Y-Drift (nm)')
-axis equal
+% figure; errorbar(D_all(:,1), D_all(:,2), stderr(:,2), stderr(:,2), stderr(:,1), stderr(:,1), 'b-o')
+% xlabel('X-Drift (nm)')
+% ylabel('Y-Drift (nm)')
+% axis equal
 
 % info and diagnostics
 drift_info.xshift = xshift;

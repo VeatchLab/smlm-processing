@@ -509,25 +509,20 @@ guidata(hObject,handles);
 
 function compute_drift_button_Callback(hObject, ~, handles)
 culled = getdataset(handles, 'culled');
-% check prereqs
-if ~isfield(handles.record, 'driftspecs')
-    nods = 1;
-else
-    nods = 0;
-    driftspecs_version = 0.1;
-    if ~isfield(handles.record.driftspecs, 'version')
-        handles.record.driftspecs = validate_driftspecs(handles.record.driftspecs, driftspecs_version, culled);
-    end
-    driftspecs = handles.record.driftspecs;
-end
-
-if nods || isempty(driftspecs)
-    error('drift correction: no driftspecs, aborting');
-end
-
 if isempty(handles.culled)
     error('drift correction: no culled data, aborting');
 end
+
+% check prereqs
+if ~isfield(handles.record, 'driftspecs') || isempty(handles.record.driftspecs)
+    handles.record.driftspecs = drift_default(culled);
+    warning('No driftspecs provided, using defaults')
+else
+    driftspecs_version = 0.1;
+    handles.record.driftspecs = validate_driftspecs(handles.record.driftspecs, driftspecs_version, culled);
+    driftspecs = handles.record.driftspecs;
+end
+driftspecs = handles.record.driftspecs;
 
 % do drift correction
 set(handles.final_stat, 'String', 'Correcting Drift ...');
@@ -706,19 +701,18 @@ end
 
 how = options.how;
 
-% switch how
-%     case 'auto'
-%         if ~isempty(record.resolution)
-%             res = record.resolution;            
-%             groupr = cellfun(@(r) options.multfac*r(1), res, 'UniformOutput', false);
-%         else
-%             groupr = num2cell(30*ones(size(record.SPspecs)));
-%         end
-%     case 'fixed'
-%         groupr = num2cell(options.groupr*ones(size(record.SPspecs))); 
-% end
+switch how
+    case 'auto'
+        if ~isempty(record.resolution)
+            res = record.resolution;            
+            groupr = cellfun(@(r) options.multfac*r(1), res, 'UniformOutput', false);
+        else
+            groupr = num2cell(30*ones(size(record.SPspecs)));
+        end
+    case 'fixed'
+        groupr = num2cell(options.groupr*ones(size(record.SPspecs))); 
+end
 
-groupr = num2cell(150); % for now
 handles.grouped_stat.String = 'Grouping...';
 drawnow
 

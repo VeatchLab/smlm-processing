@@ -53,5 +53,4 @@ switch fit_type
         end
     case 'spline'
         record.SPspecs = default_specs_spline([], SP_args{:});
-        record.driftspecs.correctz = 1;
 end
