@@ -33,12 +33,14 @@ x = indata.x; y = indata.y;
 
 n = numel(x);
 
+keep = ~isnan(x+y); % check transformed data are good
+
 % %%%%%%%%%%%%%%%%%%%%%% do the transform %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if ~isempty(tform)
-    [y,x] = tforminv(tform,y,x); % note x and y are reversed in the tform!!
+    [y,x] = tforminv(tform,y(keep),x(keep)); % note x and y are reversed in the tform!!
 end
 
-keep = max(x,y) < maxval; % check transformed data are good
+keep = (max(x,y) < maxval); % check transformed data are good
 lost = n - sum(keep);
 
 out = structfun(@(q) q(keep), indata, 'UniformOutput', false);
