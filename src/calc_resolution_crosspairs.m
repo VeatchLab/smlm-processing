@@ -69,6 +69,9 @@ info.allres_xy = allres;
 info.errors_xy = errors;
 info.centerx_xy = centerx;
 info.centery_xy = centery;
+info.g = g;
+info.xc = xc;
+info.yc = yc;
 
 % compute single resolution figure
 res = median(allres); % not sure about the best final resolution figure
