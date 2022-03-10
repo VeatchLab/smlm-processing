@@ -287,7 +287,7 @@ handles.selectedrows = eventdata.Indices(:,1);
 guidata(hObject,handles);
 
 function thresh_diag_button_Callback(~, ~, handles)
-threshold_diagnostics(handles.all_fnames);
+threshold_diagnostics(handles.specs(handles.channel)); %handles.all_fnames);
 
 function cdim1_edit_Callback(hObject, ~, handles)
 handles.specs(handles.channel).channel_dims(1) = ...
