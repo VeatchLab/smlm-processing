@@ -118,9 +118,15 @@ for ichan = 1:nchan
         adata.alldata = adata.alldata_raw;
     end
         
-    adata.xshifts = record.drift_info.xshift;
-    adata.yshifts = record.drift_info.yshift;
+    if ~isempty(record.drift_info)
+        adata.xshifts = record.drift_info.xshift;
+        adata.yshifts = record.drift_info.yshift;
+    end
+    
     id(ichan).alignment_data = adata;
+   
+    
+    id(ichan).generated_by = 'record_to_imagedata'
     
 end
 
