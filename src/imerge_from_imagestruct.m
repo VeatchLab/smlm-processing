@@ -78,7 +78,7 @@ end
 
 
 function rgb = col2rgb(col)
-if isnumeric(col) && size(col) == [1 3]
+if isnumeric(col) && isequal(size(col), [1 3])
     rgb=col;
 else
     if ~ischar(col)
