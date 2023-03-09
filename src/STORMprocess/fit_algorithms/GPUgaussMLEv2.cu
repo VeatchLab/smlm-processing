@@ -8,7 +8,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "mex.h"
 #include "cuda_runtime.h"
 #include "definitions.h"
 #include "MatInvLib.h"
@@ -17,7 +16,7 @@
 
 //*******************************************************************************************
 //theta is: {x,y,N,bg}
-__global__ void kernel_MLEFit(float *d_data, float PSFSigma, int sz, int iterations, 
+__global__ void kernel_MLEFit(const float *d_data, float PSFSigma, int sz, int iterations, 
         float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood,int Nfits){
 	/*! 
 	 * \brief basic MLE fitting kernel.  No additional parameters are computed.
@@ -150,7 +149,7 @@ __global__ void kernel_MLEFit(float *d_data, float PSFSigma, int sz, int iterati
     return;
 }
 
-__global__ void kernel_MLEFit_no_b(float *d_data, float PSFSigma, float *d_bg, int sz, int iterations, 
+__global__ void kernel_MLEFit_no_b(const float *d_data, float PSFSigma, float *d_bg, int sz, int iterations, 
         float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood,int Nfits){
 	/*! 
 	 * \brief basic MLE fitting kernel.  No additional parameters are computed.
@@ -275,7 +274,7 @@ __global__ void kernel_MLEFit_no_b(float *d_data, float PSFSigma, float *d_bg, i
     return;
 }
 //*******************************************************************************************
-__global__ void kernel_MLEFit_sigma(float *d_data, float PSFSigma, int sz, int iterations, 
+__global__ void kernel_MLEFit_sigma(const float *d_data, float PSFSigma, int sz, int iterations, 
         float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood,int Nfits){
 	/*! 
 	 * \brief basic MLE fitting kernel.  No additional parameters are computed.
@@ -408,7 +407,7 @@ __global__ void kernel_MLEFit_sigma(float *d_data, float PSFSigma, int sz, int i
 }
 
 //*******************************************************************************************
-__global__ void kernel_MLEFit_scmos_sigma(float *d_data, float PSFSigma, float *d_var, int sz, int iterations, 
+__global__ void kernel_MLEFit_scmos_sigma(const float *d_data, float PSFSigma, float const *d_var, int sz, int iterations, 
         float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood, float *d_lastjmp, int Nfits){
 	/*! 
 	 * \brief basic MLE fitting kernel.  No additional parameters are computed.
@@ -566,7 +565,7 @@ __global__ void kernel_MLEFit_scmos_sigma(float *d_data, float PSFSigma, float *
 }
 
 //*******************************************************************************************
-__global__ void kernel_MLEFit_sigma_no_b(float *d_data, float PSFSigma, float *d_bg, int sz, int iterations, 
+__global__ void kernel_MLEFit_sigma_no_b(const float *d_data, float PSFSigma, const float *d_bg, int sz, int iterations, 
         float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood,int Nfits){
 	/*! 
 	 * \brief basic MLE fitting kernel.  No additional parameters are computed.
@@ -708,7 +707,7 @@ __global__ void kernel_MLEFit_sigma_no_b(float *d_data, float PSFSigma, float *d
     return;
 }
 //*******************************************************************************************
-__global__ void kernel_MLEFit_z(float *d_data, float PSFSigma_x, float Ax, float Ay, float Bx, float By, float gamma, float d, float PSFSigma_y, int sz, int iterations, 
+__global__ void kernel_MLEFit_z(const float *d_data, float PSFSigma_x, float Ax, float Ay, float Bx, float By, float gamma, float d, float PSFSigma_y, int sz, int iterations, 
         float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood,int Nfits){
 	/*! 
 	 * \brief basic MLE fitting kernel.  No additional parameters are computed.
@@ -837,8 +836,8 @@ __global__ void kernel_MLEFit_z(float *d_data, float PSFSigma_x, float Ax, float
 }
 
 //*******************************************************************************************
-__global__ void kernel_MLEFit_sigmaxy(float *d_data, float PSFSigma, int sz, int iterations, 
-        float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood,int Nfits){
+__global__ void kernel_MLEFit_sigmaxy(const float *d_data, float PSFSigma, int sz, int iterations, 
+        float *d_Parameters, float *d_CRLBs, float *d_LogLikelihood, int Nfits){
 	/*! 
 	 * \brief basic MLE fitting kernel.  No additional parameters are computed.
 	 */
