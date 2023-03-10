@@ -16,7 +16,7 @@ methods
     nothers = 1;
     switch specs.fit_method
         case 'gaussianPSF'
-            fq.fitfun = @(psf,bg) fitpsf_gpumle(psf,bg,specs.fittype,specs);
+            fq.fitfun = @(psf,bg) fitpsf_gpumle_ptx(psf,bg,specs);
         case 'spline'
             cal=load(specs.spline_calibration_fname);
             coeff=cal.cspline.coeff;
@@ -54,7 +54,7 @@ methods
         nnew = movinds(j,3); % number of fits for this pair
         while (nnew > 0)
             ichunk = fq.njobs + 1; % chunk index for current queue
-            nqueued = fq.nqueued;
+            nqueued = fq.nqueued; %#ok<*PROPLC>
             if (nnew + nqueued > nmax)
                 % dispatch nmax psfs
                 ndif = nmax - nqueued;
@@ -123,39 +123,16 @@ methods
         return
     end
 
-    njobs = fq.njobs;
-    if (njobs == numel(fq.jobs)) % extend jobs cell if necessary
-        fq.jobs(njobs + (1:5)) = cell(1,5);
-    end
+    njobs = fq.njobs; %#ok<*PROP>
+%     if (njobs == numel(fq.jobs)) % extend jobs cell if necessary
+%         fq.jobs(njobs + (1:5)) = cell(1,5);
+%     end
 
     inds = 1:fq.nqueued;
     others = cellfun(@(stk) stk(:,:,inds), fq.others, 'UniformOutput', false);
-    fq.jobs{njobs + 1} = parfeval(fq.fitfun, 1, fq.psfs(:,:,inds), others{:});
-    fq.chunks(njobs + 1).n = fq.nqueued;
-    fq.njobs = njobs + 1;
-
-    if (njobs + 1 >= numel(fq.chunks)) % extend chunks cell
-        fq.chunks(njobs + 2) = fq.newchunk();
-    end
-
-    fq.nqueued = 0;
-  end
-
-  % collect results from finished fitting jobs
-  function collect(fq)
-
-    for j = 1:fq.njobs
-        job = fq.jobs{j};
-        if (isa(job, 'parallel.FevalFuture') && strcmp(job.State, 'finished'))
-            newdata = job.fetchOutputs();
-
-            % Check if text output contains errors
-            out_text = job.Diary;
-            if ~isempty(regexp(out_text, 'You should clear this function', 'ONCE'))
-                fprintf('Error from fitting call. Text output:\n%s\n', out_text);
-                error('Fitting');
-            end
-            
+    newdata = fq.fitfun(fq.psfs(:,:,inds), others{:});
+    
+    j = njobs + 1;
             emptydata = structfun(@(x) [], newdata, 'UniformOutput', false);
             emptydata.x = []; emptydata.y = [];
             if (numel(fq.data) == 0)
@@ -200,12 +177,37 @@ methods
 
                 ndone = ndone + num;
             end
+    fq.chunks(njobs + 1).n = fq.nqueued;
+    fq.njobs = njobs + 1;
+
+    if (njobs + 1 >= numel(fq.chunks)) % extend chunks cell
+        fq.chunks(njobs + 2) = fq.newchunk();
+    end
+
+    fq.nqueued = 0;
+  end
+
+  % collect results from finished fitting jobs
+  function collect(fq)
+
+%     for j = 1:fq.njobs
+%         job = fq.jobs{j};
+%         if (isa(job, 'parallel.FevalFuture') && strcmp(job.State, 'finished'))
+%             newdata = job.fetchOutputs();
+
+            % Check if text output contains errors
+%             out_text = job.Diary;
+%             if ~isempty(regexp(out_text, 'You should clear this function', 'ONCE'))
+%                 fprintf('Error from fitting call. Text output:\n%s\n', out_text);
+%                 error('Fitting');
+%             end
+            
 
             % Clean up job
-            delete(job);
-            fq.jobs{j} = [];
-        end
-    end
+%             delete(job);
+%             fq.jobs{j} = [];
+%         end
+%     end
   end
 
   % wait for remaining fitting jobs to finish

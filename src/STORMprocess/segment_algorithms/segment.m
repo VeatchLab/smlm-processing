@@ -23,7 +23,7 @@ end
 for pass = 1:passes
     Idisc = zeros(size(Iall));
     ce = cell(1,nframe);
-    parfor i = 1:nframe
+    for i = 1:nframe
         Idisc(:,:,i) = filter_frame(Iall(:,:,i) - Ibg);  %make a new one for spline 
         BW  = bwmorph( Idisc(:,:,i) > specs.thresh, 'clean');
         [y,x,val] = find(maskedRegionalMax(Idisc(:,:,i), BW));
