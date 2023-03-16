@@ -1,5 +1,19 @@
 function px_shift = correct_dx_in_record(record_fname, backup_suffix)
-px_shift = 0;
+% PX_SHIFT = CORRECT_DX_IN_RECORD(RECORD_FNAME, BACKUP_SUFFIX)
+
+% Copyright (C) 2023 Thomas Shaw and Sarah Veatch
+% This file is part of SMLM PROCESSING 
+% SMLM PROCESSING is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% SMLM PROCESSING is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% You should have received a copy of the GNU General Public License
+% along with SMLM PROCESSING.  If not, see <https://www.gnu.org/licenses/>
+PX_SHIFT = 0;
 
 if nargin < 1
     record_fname = 'record.mat';

@@ -1,5 +1,19 @@
 function [shifteddata, drift_info] = compute_drift_meanshift_3D(data, specs, record, activenotif)
-olddata = data;
+% [SHIFTEDDATA, DRIFT_INFO] = COMPUTE_DRIFT_MEANSHIFT_3D(DATA, SPECS, RECORD, ACTIVENOTIF)
+
+% Copyright (C) 2023 Thomas Shaw and Sarah Veatch
+% This file is part of SMLM PROCESSING 
+% SMLM PROCESSING is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% SMLM PROCESSING is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% You should have received a copy of the GNU General Public License
+% along with SMLM PROCESSING.  If not, see <https://www.gnu.org/licenses/>
+OLDDATA = DATA;
 % Put the data in the right shape
 if size(data,2) ~= numel(data)
     data = reshape(data', 1, numel(data));

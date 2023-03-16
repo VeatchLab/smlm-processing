@@ -1,5 +1,19 @@
 function [c, err] = xcor_crosspairs_bandwidth(pts1, pts2, r, bandwidth, maskx, masky)
-    x1 = pts1(:,1);
+% [C, ERR] = XCOR_CROSSPAIRS_BANDWIDTH(PTS1, PTS2, R, BANDWIDTH, MASKX, MASKY)
+
+% Copyright (C) 2023 Thomas Shaw and Sarah Veatch
+% This file is part of SMLM PROCESSING 
+% SMLM PROCESSING is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+% SMLM PROCESSING is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+% You should have received a copy of the GNU General Public License
+% along with SMLM PROCESSING.  If not, see <https://www.gnu.org/licenses/>
+    X1 = PTS1(:,1);
     y1 = pts1(:,2);
     x2 = pts2(:,1);
     y2 = pts2(:,2);
