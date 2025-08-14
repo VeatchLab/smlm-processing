@@ -1,18 +1,4 @@
 function out = unpack_imagestruct(is,which)
-% OUT = UNPACK_IMAGESTRUCT(IS,WHICH)
-
-% Copyright (C) 2023 Thomas Shaw and Sarah Veatch
-% This file is part of SMLM PROCESSING 
-% SMLM PROCESSING is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% (at your option) any later version.
-% SMLM PROCESSING is distributed in the hope that it will be useful,
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-% You should have received a copy of the GNU General Public License
-% along with SMLM PROCESSING.  If not, see <https://www.gnu.org/licenses/>
 
 if nargin < 2
     which = 'default';
@@ -68,11 +54,11 @@ else
     % Otherwise assemble timing data from the metadata that is
     % loaded into record
     record = load(record_fname, 'metadata');
-    
+
     mdata = record.metadata;
     frame_time = record.metadata.frame_time;
     frames = 1:nframes;
-    
+
     timevec = zeros(nframes, 1);
     moviei_start_time = zeros(movienum, 1);
 
@@ -90,7 +76,7 @@ else
         T(m,:) = [newtimes(1) - frame_time/2, newtimes(end) + frame_time/2];
     end
 end
-    
+
 % do unpacking for each channel present in the data
 for channel=1:numel(data.data)
     % put in correct time order
@@ -99,53 +85,124 @@ for channel=1:numel(data.data)
     % default fields
     fields = {'x', 'y', 't'};
     if isfield(d,'z')
-        fields = {fields, 'z'}
+        fields = {fields, 'z'};
     end
     if iscell(which)
-        fields = [fields, which];
+        fields = which;
     else % will be a special arg instead
         switch which
             case 'all'
-                fields = [{'t'}; {'framenumber'}; fieldnames(d)];
+                fields = [{'t'}, fieldnames(d)'];
         end
     end
-    
-    for j = 1:numel(is.maskx)
-        ii = ii + 1;
-        
-        maskx = is.maskx{j};
-        masky = is.masky{j};
 
+    fields
+    % deal with windows.  
+    %   If no window or mask, return everything.
+    %   If window and mask, ignore mask and return a warning
+    %   If only a mask, use the mask.
+
+    window_flag = false;
+    if isfield(is, 'window')
+        if numel(is.window)>0
+            window_flag = true;
+            if numel(is.maskx)>0
+                warning('mask is present but not applied when window field is present')
+            end
+            for j=1:numel(is.window)
+                ii = ii + 1;
+                W = is.window(j);
+                for k=1:numel(d)
+                    %ind = inpolygon(d(k).x,d(k).y, maskx, masky);
+
+                    ind = spacewin_isinside(d(k).x,d(k).y,W);
+
+                    for kk = 1:numel(fields)
+                        f = fields{kk};
+                        if f=='t' % special case for time -- it is not included in the data
+                            maskeddata(k).(f) = ones([1, sum(ind)])*timevec(k);
+                        else
+                            maskeddata(k).(f) = d(k).(f)(ind);
+                        end
+                    end
+                end
+
+                outdata = struct('spacewin', W, 'timewin', T, 'channel', channel,...
+                    'maskid', 0, 'imageid',1); % overwritten later if more than one
+
+                % bring in other requested fields
+                for k=1:numel(fields)
+                    f = fields{k};
+                    outdata.(f) = [maskeddata.(f)];
+                end
+                out(ii) = outdata;
+            end
+        end
+    end
+    if ~window_flag && numel(is.maskx)==0
+        ii = ii + 1;
         for k=1:numel(d)
-            ind = inpolygon(d(k).x,d(k).y, maskx, masky);
-            
             for kk = 1:numel(fields)
                 f = fields{kk};
                 if f=='t' % special case for time -- it is not included in the data
-                    maskeddata(k).(f) = ones([1, sum(ind)])*timevec(k);
-                elseif strcmp(f,'framenumber') % special case for frame index
-                    maskeddata(k).(f) = ones([1, sum(ind)])*k;
+                    maskeddata(k).(f) = ones([1, numel(d(k).x)])*timevec(k);
                 else
-                    maskeddata(k).(f) = d(k).(f)(ind);
+                    maskeddata(k).(f) = d(k).(f);
                 end
             end
         end
-        
-        % Make struct for spatial mask
-        smask = struct('x', maskx, 'y', masky, 'type', 'polygon');
 
-        % desired fields:
-        % x,y,t,spacewin,timewin,frame_time,timevec,channel,maskid
+        smask = [];
+
         outdata = struct('spacewin', smask, 'timewin', T, 'channel', channel,...
-                        'maskid', j, 'imageid',1); % overwritten later if more than one
+            'maskid', 0, 'imageid',1); % overwritten later if more than one
 
         % bring in other requested fields
         for k=1:numel(fields)
             f = fields{k};
             outdata.(f) = [maskeddata.(f)];
         end
-
         out(ii) = outdata;
     end
+
+    if ~window_flag && numel(is.maskx)>0
+        for j = 1:numel(is.maskx)
+            ii = ii + 1;
+
+            maskx = is.maskx{j};
+            masky = is.masky{j};
+
+            for k=1:numel(d)
+                ind = inpolygon(d(k).x,d(k).y, maskx, masky);
+                %ind = spacewin_isinside(d(k).x,d(k).y,W);
+
+                for kk = 1:numel(fields)
+                    f = fields{kk};
+                    if f=='t' % special case for time -- it is not included in the data
+                        maskeddata(k).(f) = ones([1, sum(ind)])*timevec(k);
+                    else
+                        maskeddata(k).(f) = d(k).(f)(ind);
+                    end
+                end
+            end
+
+            % Make struct for spatial mask
+            smask = struct('x', maskx, 'y', masky, 'type', 'polygon');
+
+            % desired fields:
+            % x,y,t,spacewin,timewin,frame_time,timevec,channel,maskid
+            outdata = struct('spacewin', smask, 'timewin', T, 'channel', channel,...
+                'maskid', j, 'imageid',1); % overwritten later if more than one
+
+            % bring in other requested fields
+            for k=1:numel(fields)
+                f = fields{k};
+                outdata.(f) = [maskeddata.(f)];
+            end
+
+            out(ii) = outdata;
+        end
+    end
 end
+
 end
