@@ -22,7 +22,7 @@ function varargout = SPspec_gui(varargin)
 
 % Edit the above text to modify the response to help SPspec_gui
 
-% Last Modified by GUIDE v2.5 04-Mar-2023 03:18:53
+% Last Modified by GUIDE v2.5 23-Jul-2018 05:43:58
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -71,6 +71,8 @@ handles.output = handles.specs;
 
 % Update handles structure
 guidata(hObject, handles);
+set(hObject, 'Resize', 'on');
+
 
 % --- Outputs from this function are returned to the command line.
 function varargout = SPspec_gui_OutputFcn(hObject, ~, handles)
@@ -431,3 +433,22 @@ if updateflag
     guidata(hObject, handles);
     update_fields_from_specs(handles, handles.channel);
 end
+
+
+% --- Executes on figure resize.
+function figure1_SizeChangedFcn(hObject, eventdata, handles)
+if isempty(handles)
+    return;
+end
+
+% Get the new figure size
+fig_pos = get(hObject, 'Position');
+width = fig_pos(3);
+height = fig_pos(4);
+
+% Reposition and resize components
+set(handles.fnames_table, 'Position', [10, 10, width - 20, height - 200]);
+set(handles.channel_menu, 'Position', [10, height - 30, 120, 25]);
+set(handles.return_button, 'Position', [width - 100, height - 30, 80, 25]);
+
+% Adjust other components as needed

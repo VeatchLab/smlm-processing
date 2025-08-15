@@ -1,3 +1,4 @@
+
 function varargout = coriolis_gui(varargin) %#ok<*NASGU>
 % CORIOLIS_GUI MATLAB code for coriolis_gui.fig
 %      CORIOLIS_GUI, by itself, creates a new CORIOLIS_GUI or raises the existing
@@ -46,6 +47,7 @@ end
 function coriolis_gui_OpeningFcn(hObject, ~, handles, varargin)
 handles.output = hObject;
 guidata(hObject, handles);
+set(hObject, 'Resize', 'on');
 
 handles.datasets = {'fits', 'transformed', 'dilated', 'culled', 'final', 'grouped'};
 
@@ -403,7 +405,6 @@ specs = getspecs(handles);
 % Do fitting
 set(handles.fits_stat, 'String', 'Fitting ...');
 drawnow;
-
 [data, ~, metadata] = STORMprocess(specs);
 
 fits.data = data;
@@ -438,9 +439,6 @@ cspecs = SPspecs.camera_specs;
 
 fits = getdataset(handles, 'fits');
 %fits = handles.fits;
-if isempty(fits)
-    error('geometry: No fits yet, aborting');
-end
 
 set(handles.dilated_stat, 'String', 'Applying Transform ...');
 drawnow;
@@ -481,9 +479,6 @@ if nocs || isempty(cs) || any(cellfun(@isempty, cs))
     error('cull: no cull specs, aborting');
 end
 
-if isempty(handles.dilated)
-    error('cull: no data from geometry step, aborting');
-end
 
 % do culling
 set(handles.culled_stat, 'String', 'Culling ...');
@@ -500,18 +495,12 @@ function edit_driftspec_button_Callback(hObject, ~, handles)
 %error('not implemented');
 % validate driftspecs
 culled = getdataset(handles, 'culled');
-if isempty(culled)
-    error('drift correction: no culled data, aborting');
-end
 
 handles.record.driftspecs = driftspecs_gui(handles.record.driftspecs, culled);
 guidata(hObject,handles);
 
 function compute_drift_button_Callback(hObject, ~, handles)
 culled = getdataset(handles, 'culled');
-if isempty(handles.culled)
-    error('drift correction: no culled data, aborting');
-end
 
 % check prereqs
 if ~isfield(handles.record, 'driftspecs') || isempty(handles.record.driftspecs)
@@ -547,9 +536,6 @@ if nods || isempty(drift_info)
     error('drift correction: no preexisting drift correction, aborting');
 end
 
-if isempty(handles.culled)
-    error('drift correction: no culled data, aborting');
-end
 
 set(handles.final_stat, 'String', 'Applying Drift Correction ...');
 drawnow;
@@ -636,6 +622,10 @@ if isempty(tokens)
 end
 data_name = tokens{1}{1};
 d = getdataset(handles, data_name);
+if isempty(d)
+    uiwait(msgbox(['No data for ',data_name,' yet.'], 'No data', 'warn'));
+    return;
+end
 inspect_STORMdata(d);
 
 function tform_checkbox_Callback(hObject, ~, handles)
@@ -670,12 +660,11 @@ st = 'Done: ';
 for i=1:length(data)
     switch record.SPspecs(i).fit_method
         case 'gaussianPSF'
-            [res{i} info{i}] = calc_resolution_crosspairs(data{i}, record, options);
+            [res{i} info{i}] = calc_resolution_spacetime(data{i}, record, options);
             st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
         case 'spline'
-             [res{i} info{i}] = calc_resolution_crosspairs_3D(data{i}, record, options);
-             st = [st 'sxy=' num2str(res{i}(1), 2) final.units ', ' ...
-                 'sz=' num2str(res{i}(2), 2) final.units];
+             [res{i} info{i}] = calc_resolution_spacetime(data{i}, record, options);
+             st = [st 'sxy=' num2str(res{i}, 2) final.units '. '];
     end
 end
 
@@ -731,3 +720,35 @@ handles.grouped_stat.String = 'Grouping complete';
 drawnow
 
 function grouping_specs_button_Callback(hObject, eventdata, handles)
+
+
+% --- Executes on figure resize.
+function figure1_SizeChangedFcn(hObject, eventdata, handles)
+if isempty(handles)
+    return;
+end
+
+% Get the new figure size
+fig_pos = get(hObject, 'Position');
+width = fig_pos(3);
+height = fig_pos(4);
+
+% Reposition and resize components
+% This is a basic example, you may need to adjust the values
+% based on your specific layout and component sizes.
+
+% Top row of buttons
+set(handles.choose_button, 'Position', [10, height - 40, 80, 25]);
+set(handles.new_button, 'Position', [100, height - 40, 80, 25]);
+set(handles.save_button, 'Position', [190, height - 40, 80, 25]);
+set(handles.runall_button, 'Position', [280, height - 40, 80, 25]);
+set(handles.fork_record_button, 'Position', [370, height - 40, 80, 25]);
+
+% File name display
+set(handles.fname_text, 'Position', [10, height - 70, width - 20, 20]);
+
+% Panels
+set(handles.uipanel1, 'Position', [10, height - 250, width - 20, 170]);
+set(handles.uipanel2, 'Position', [10, height - 430, width - 20, 170]);
+
+% Adjust components within panels as needed

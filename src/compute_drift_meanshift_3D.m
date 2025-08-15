@@ -24,6 +24,31 @@ interp_method = specs.interp_method;
 outlier_error = specs.outlier_error;
 maxiter = 1000;
 
+% Get new drift spec options
+if isfield(specs, 'downsample_flag')
+    downsample_flag = specs.downsample_flag;
+else
+    downsample_flag = 0;
+end
+
+if isfield(specs, 'points_per_frame')
+    points_per_frame = specs.points_per_frame;
+else
+    points_per_frame = 100;
+end
+
+if isfield(specs, 'local_tbins_flag')
+    local_tbins_flag = specs.local_tbins_flag;
+else
+    local_tbins_flag = 1;
+end
+
+if isfield(specs, 'local_tbin_width')
+    local_tbin_width = specs.local_tbin_width;
+else
+    local_tbin_width = 20;
+end
+
 roi_width = max([data.x]) - min([data.x]);
 roi_height = max([data.y]) - min([data.y]);
 area = roi_width * roi_height;
@@ -71,8 +96,12 @@ iter_toconverge = zeros(nTimeBin, nTimeBin);
 
 npoints = zeros(1,nTimeBin);
 
-% helper function for getting data
-getnthdata = @(n) data(firstframe(n):lastframe(n));
+% helper function for getting data with optional downsampling
+if downsample_flag
+    getnthdata = @(n) downsample_data(data(firstframe(n):lastframe(n)), points_per_frame);
+else
+    getnthdata = @(n) data(firstframe(n):lastframe(n));
+end
 refdata = getnthdata(1);
 tref = get_ts(refdata);
 
@@ -112,7 +141,15 @@ parfor i = 1:nTimeBin - 1
     ntruepairs_z_temp = zeros(nTimeBin, 1); nfalsepairs_z_temp = zeros(nTimeBin, 1);
     loc_error_temp = zeros(nTimeBin, 1); loc_error_z_temp = zeros(nTimeBin, 1);
     iter_toconverge_temp = zeros(nTimeBin, 1);
-    for j = i+1:nTimeBin
+    
+    % Determine range of time bins to compare with based on local_tbins_flag
+    if local_tbins_flag
+        maxTbin = min(nTimeBin, i+local_tbin_width);
+    else
+        maxTbin = nTimeBin;
+    end
+    
+    for j = i+1:maxTbin
         xoffset = -xshift_temp(j-1);
         yoffset = -yshift_temp(j-1);
         zoffset = -zshift_temp(j-1);

@@ -6,11 +6,16 @@ n = 0;
 xshift_diff = 1; % just to make loop condition work
 yshift_diff = 1;
 
+%counter = 1;
+%xshift = zeros(1, 1000);
+%yshift = zeros(1, 1000)
+
 % Gaussian mean shift approach
 while (xshift_diff ~= 0 && yshift_diff ~= 0 && n < maxiter && ~isnan(xshift(end)))
     % find all pairs within a distance of delta from the current shift
     r = sqrt((dx - xshift(end)).^2 + (dy - yshift(end)).^2);
-    closei = find(r < delta);
+    %closei = find(r < delta);
+    closei = r < delta;
     
     % Update the shift estimate
     xshift = [xshift; mean(dx(closei))];
