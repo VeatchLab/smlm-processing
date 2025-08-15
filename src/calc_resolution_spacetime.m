@@ -1,35 +1,46 @@
-function [res, info] = calc_resolution_spacetime()
+function [res, info] = calc_resolution_spacetime(data, options)
 % CALC_RESOLUTION_SPACETIME Compute spatiotemporal resolution for STORM data
-%   [RES, INFO] = CALC_RESOLUTION_SPACETIME()
+%   [RES, INFO] = CALC_RESOLUTION_SPACETIME(DATA, OPTIONS)
 %   
 %   Inputs:
-%       final.mat - imagestruct containing fields x, y, t, spacewin, timewin
+%       DATA - imagestruct containing fields x, y, t, spacewin, timewin
+%              or struct array with these fields
+%       OPTIONS - resolution options structure (optional, uses defaults if not provided)
 %   
 %   Outputs:
 %       RES - resolution value in nm
 %       INFO - structure containing correlation data and parameters
 %
-%   TODO: Functionalize this code
-&   Note: I tried to make this file fancy and functional, but it did not work.
-%         Compare to last commit to see what I mean. 
+%   Loads 'final.mat' and uses default options
 
 is1 = imagestruct_default('final.mat');
 data = unpack_imagestruct(is1);
-
-%% Optionally draw a new spatial window / ROI. Skip this step to use the one from the paper.
-% spacewin_gui is a helper gui for drawing spatial windows that may have
-% holes or multiple disjoint segments. Press 'save and close' when
-% you are done.
-
 %data.spacewin = spacewin_gui(data, 'PixelSize', 10) % use 10nm pixels
 data(1).spacewin = spacewin_gui(data(1), 'PixelSize', 10); % use 10nm pixels
 data(2).spacewin = data(1).spacewin;
 
+% Process each channel
+res = cell(size(data));
+info = cell(size(data));
+
+    
 %% Run the resolution estimation routine
 % Here we supply the data as a struct with fields x,y,t,spacewin,timewin.
 % The function also accepts these arguments separately (in that order).
-[corrdata, params] = spacetime_resolution(data(2), 'NTauBin', 10, 'Bootstrap', false);
+    
+% Extract parameters from options if available
+nt_bin = 10; % default
+bootstrap = false; % default
 
+if isfield(options, 'NTauBin')
+    nt_bin = options.NTauBin;
+end
+if isfield(options, 'Bootstrap')
+    bootstrap = options.Bootstrap;
+end
+    
+[corrdata, params] = spacetime_resolution(data, 'NTauBin', nt_bin, 'Bootstrap', bootstrap);
+    
 %% Plot the correlation functions for each tau bin
 figure;
 plot(corrdata.r, corrdata.cWA)
@@ -62,4 +73,3 @@ res_info.params = params;
 res_info.tau = tau;
 
 save('res_info_channel2.mat','-struct','res_info');
-

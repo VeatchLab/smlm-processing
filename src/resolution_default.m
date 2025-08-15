@@ -30,5 +30,11 @@ options.binsize = 10*fac;
 options.units = units;
 options.range = [.1 .9 .1 .9 .2 .8];
 
+% New options for functionalized calc_resolution_spacetime
+options.NTauBin = 10;
+options.Bootstrap = false;
+options.show_plots = false;
+options.save_results = false;
+options.pixel_size = 10; % nm
 
 end

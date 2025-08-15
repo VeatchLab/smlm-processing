@@ -660,10 +660,10 @@ st = 'Done: ';
 for i=1:length(data)
     switch record.SPspecs(i).fit_method
         case 'gaussianPSF'
-            [res{i} info{i}] = calc_resolution_spacetime();
+            [res{i} info{i}] = calc_resolution_spacetime(data(i), options);
             st = [st 'chan' num2str(i) '=' num2str(res{i}, 2) final.units '. '];
         case 'spline'
-             [res{i} info{i}] = calc_resolution_spacetime();
+             [res{i} info{i}] = calc_resolution_spacetime(data(i), options);
              st = [st 'sxy=' num2str(res{i}, 2) final.units '. '];
     end
 end
