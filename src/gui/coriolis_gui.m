@@ -440,6 +440,10 @@ cspecs = SPspecs.camera_specs;
 fits = getdataset(handles, 'fits');
 %fits = handles.fits;
 
+if isempty(fits)
+    error('geometry: No fits yet, aborting');
+end
+
 set(handles.dilated_stat, 'String', 'Applying Transform ...');
 drawnow;
 handles.transformed = transform_block(fits, handles.record);
@@ -479,6 +483,10 @@ if nocs || isempty(cs) || any(cellfun(@isempty, cs))
     error('cull: no cull specs, aborting');
 end
 
+if isempty(handles.dilated)
+    error('cull: no data from geometry step, aborting');
+end
+
 
 % do culling
 set(handles.culled_stat, 'String', 'Culling ...');
@@ -496,11 +504,19 @@ function edit_driftspec_button_Callback(hObject, ~, handles)
 % validate driftspecs
 culled = getdataset(handles, 'culled');
 
+if isempty(culled)
+    error('drift correction: no culled data, aborting');
+end
+
 handles.record.driftspecs = driftspecs_gui(handles.record.driftspecs, culled);
 guidata(hObject,handles);
 
 function compute_drift_button_Callback(hObject, ~, handles)
 culled = getdataset(handles, 'culled');
+
+if isempty(handles.culled)
+    error('drift correction: no culled data, aborting');
+end
 
 % check prereqs
 if ~isfield(handles.record, 'driftspecs') || isempty(handles.record.driftspecs)
@@ -536,6 +552,9 @@ if nods || isempty(drift_info)
     error('drift correction: no preexisting drift correction, aborting');
 end
 
+if isempty(handles.culled)
+    error('drift correction: no culled data, aborting');
+end
 
 set(handles.final_stat, 'String', 'Applying Drift Correction ...');
 drawnow;
