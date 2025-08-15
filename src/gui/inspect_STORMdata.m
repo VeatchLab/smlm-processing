@@ -187,6 +187,51 @@ newxlim = ax.XLim;
 newylim = ax.YLim;
 newlim = max(diff(newxlim), diff(newylim));
 newscalebarlen = round(newlim/10, 1, 'significant');
+
+% Check if we need to re-render for viewport-based rendering
+handles = guidata(ax.Parent);
+if isfield(handles, 'istruct') && isfield(handles, 'data')
+    % Calculate viewport
+    viewport = [newxlim(1), newxlim(2), newylim(1), newylim(2)];
+    
+    % Check if viewport is significantly smaller than full image
+    full_xlim = handles.istruct.imageref.XWorldLimits;
+    full_ylim = handles.istruct.imageref.YWorldLimits;
+    full_area = (full_xlim(2) - full_xlim(1)) * (full_ylim(2) - full_ylim(1));
+    viewport_area = (viewport(2) - viewport(1)) * (viewport(4) - viewport(3));
+    
+    % If viewport is less than 25% of full area, use viewport rendering
+    if viewport_area < 0.25 * full_area
+        try
+            % Use viewport-based rendering
+            [handles.Merge, handles.I] = imerge_from_imagestruct_viewport(handles.istruct, viewport);
+            handles.Itoshow = handles.Merge;
+            
+            % Update the image display
+            set(handles.im, 'CData', handles.Itoshow);
+            axis(ax, 'equal', 'off');
+            
+            % Store the current viewport for future reference
+            handles.current_viewport = viewport;
+            guidata(ax.Parent, handles);
+        catch ME
+            % If viewport rendering fails, fall back to full rendering
+            warning('Viewport rendering failed, using full rendering: %s', ME.message);
+        end
+    else
+        % Use full rendering for larger viewports
+        if ~isfield(handles, 'current_viewport') || ...
+           any(abs(handles.current_viewport - viewport) > 0.1 * (viewport(2) - viewport(1)))
+            [handles.Merge, handles.I] = imerge_from_imagestruct(handles.istruct);
+            handles.Itoshow = handles.Merge;
+            set(handles.im, 'CData', handles.Itoshow);
+            handles.current_viewport = viewport;
+            guidata(ax.Parent, handles);
+        end
+    end
+end
+
+% Draw scale bar
 newscalebarmag = 10.^(floor(log10(newscalebarlen)));
 if (newscalebarlen/newscalebarmag > 6)
     newscalebarmag = 10*newscalebarmag;

@@ -59,6 +59,13 @@ options.calc_error = 1;
 options.broadsweep = 0;
 options.fix_nframes_per_alignment = 1;
 options.skip_correction = 0;
+
+% new drift spec options for improved performance
+options.downsample_flag = 0;  % set to 1 if you want to down sample
+options.points_per_frame = 100;  % how many randomly sampled points per image frame
+options.local_tbins_flag = 1;  % set to 1 to only compare displacements close in t
+options.local_tbin_width = 20;  % how many local tbins to compare with
+
 options.version = 0.1;
 
 

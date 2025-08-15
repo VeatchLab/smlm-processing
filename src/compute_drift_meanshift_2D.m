@@ -5,10 +5,25 @@ if size(data,2) ~= numel(data)
     data = reshape(data', 1, numel(data));
 end
 
+% downsample if desired
+if isfield(specs, 'downsample_flag')
+    if specs.downsample_flag
+        for i = 1:numel(data)
+            n_points = min(specs.points_per_frame, numel(data(i).x));
+            if n_points < numel(data(i).x)
+                inds = randperm(numel(data(i).x), n_points);
+                data(i).x = data(i).x(inds);
+                data(i).y = data(i).y(inds);
+            end
+        end
+    end
+end
+
 % Get parameters
 nframes = numel(data);
 nTimeBin = round(specs.npoints_for_alignment);
 binwidth = round(specs.nframes_per_alignment);
+
 if specs.fix_nframes_per_alignment
     binwidth = floor(nframes/nTimeBin);
 end
@@ -52,9 +67,11 @@ tref = get_ts(refdata);
 % stay on, as well as for the appropriate noutmax
 x1 = [refdata(:).x]; y1 = [refdata(:).y];
 x2 = x1; y2 = y1;
+
+
 taumax = max(tref); 
 noutmax = 1e8;
-
+numel(x1)
 [dx, dy] = crosspairs(x1, y1, tref, x2, y2, tref, rmax, 1, taumax, noutmax);
 noutmax = 2*length(dx); % We'll use this later. This is an upper bound for the number of pairs.
 
@@ -67,8 +84,17 @@ delta_narrow = loc_prec*specs.delta_narrow_ratio;
 mean_nframeson = (ntruepairs_broad/2)/length(x1) + 1; % relevant to the error calculation, too
 corr_time = min(20*mean_nframeson, binwidth/2);
 
-p = gcp;
-parfor i = 1:nTimeBin - 1
+if isfield(specs, 'local_tbins_flag')
+    local_tbins_flag = specs.local_tbins_flag;
+    local_tbin_width = specs.local_tbin_width;
+else
+    local_tbins_flag = 0;
+    local_tbin_width = 0;
+end
+    
+
+%p = gcp;
+for i = 1:nTimeBin - 1
     refdata  = getnthdata(i);
     
     npoints(i) = numel([refdata.x]);
@@ -82,7 +108,14 @@ parfor i = 1:nTimeBin - 1
     loc_error_temp = zeros(nTimeBin, 1);
     iter_toconverge_temp = zeros(nTimeBin, 1);
     
-    for j = i+1:nTimeBin
+    
+    if local_tbins_flag
+        maxTbin = min(nTimeBin, i+local_tbin_width);
+    else
+        maxTbin = nTimeBin;
+    end
+    
+    for j = i+1:maxTbin
         xoffset = -xshift_temp(j-1);
         yoffset = -yshift_temp(j-1);
         
@@ -144,7 +177,7 @@ parfor i = 1:nTimeBin - 1
     ntruepairs(i, :) = ntruepairs_temp; nfalsepairs(i, :) = nfalsepairs_temp;
     loc_error(i, :) = loc_error_temp;
     iter_toconverge(i, :) = iter_toconverge_temp;
-%     fprintf('Finished with time bin %i\n', i)
+     fprintf('Finished with time bin %i\n', i)
 end
 
 % check if the median of the predicted error is > loc_prec/4. If so, some of the
@@ -164,7 +197,12 @@ R = zeros(nelements, 2);
 w = zeros(nelements, 1);
 count = 1;
 for i=1:nTimeBin-1
-    for j=i+1:nTimeBin
+    if local_tbins_flag
+        maxTbin = min(nTimeBin, i+local_tbin_width);
+    else
+        maxTbin = nTimeBin;
+    end
+    for j=i+1:maxTbin
         A(count, i) = -1;
         A(count, j) = 1;
         R(count, 1) = xshift(i,j);

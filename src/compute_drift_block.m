@@ -31,6 +31,11 @@ if driftspecs.skip_correction
     return
 end
 
+    
+    
+
+
+
 if driftspecs.correctz
     [aligned.data{cull_channel}, drift_info] = compute_drift_meanshift_3D(data.data{cull_channel}, driftspecs, record, activenotif);
     figure; errorbar(drift_info.midtiming, drift_info.drift(:,3), [drift_info.stderr(:,3)], 'bo')

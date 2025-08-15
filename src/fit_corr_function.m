@@ -16,6 +16,7 @@ fgo.Upper = [Inf,rmax,rmax,rmax,rmax,inf];
 for l=1:numel(tcenters)-1
     
     slope = g(:, :, l)-g(:, :, end);
+%     slope = slope/(max(abs(slope(:)))); %% g(end) is above zero --> slope is negative --> normalization makes it Inf
     slope = slope/max(slope(:));
     
     f = fit([xmesh(tofit) ymesh(tofit)], slope(tofit), fitgauss, fgo);

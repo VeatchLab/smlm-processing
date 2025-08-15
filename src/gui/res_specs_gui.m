@@ -22,7 +22,7 @@ function varargout = res_specs_gui(varargin)
 
 % Edit the above text to modify the response to help res_specs_gui
 
-% Last Modified by GUIDE v2.5 04-Mar-2023 04:19:23
+% Last Modified by GUIDE v2.5 10-Aug-2021 14:16:08
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -63,6 +63,8 @@ handles.output = handles.specs;
 
 % Update handles structure
 guidata(hObject, handles);
+set(hObject, 'Resize', 'on');
+
 
 % --- Outputs from this function are returned to the command line.
 function varargout = res_specs_gui_OutputFcn(hObject, eventdata, handles) 
@@ -117,3 +119,32 @@ uiresume(handles.figure1);
 if ~handles.to_return
     delete(handles.figure1)
 end
+
+
+% --- Executes on figure resize.
+function figure1_SizeChangedFcn(hObject, eventdata, handles)
+if isempty(handles)
+    return;
+end
+
+% Get the new figure size
+fig_pos = get(hObject, 'Position');
+width = fig_pos(3);
+height = fig_pos(4);
+
+% Reposition and resize components
+set(handles.text1, 'Position', [10, height - 30, 100, 20]);
+set(handles.Npts_edit, 'Position', [120, height - 30, 60, 20]);
+
+set(handles.text2, 'Position', [10, height - 60, 100, 20]);
+set(handles.rmax_edit, 'Position', [120, height - 60, 60, 20]);
+
+set(handles.text3, 'Position', [10, height - 90, 100, 20]);
+set(handles.binsize_edit, 'Position', [120, height - 90, 60, 20]);
+
+set(handles.show_diagnostics_checkbox, 'Position', [10, height - 120, 150, 20]);
+
+set(handles.text4, 'Position', [10, height - 150, 100, 20]);
+set(handles.units_menu, 'Position', [120, height - 150, 100, 20]);
+
+set(handles.return_button, 'Position', [width - 120, 10, 100, 30]);
